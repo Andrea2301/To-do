@@ -7,7 +7,7 @@ vault and a real code editor into a single focused workspace. It ships with a
 hand-crafted design system, a fully functional light/dark theme, meaningful animations,
 and a local-first data model.
 
-![DoItNow dashboard](docs/screenshots/dashboard-light.png)
+
 
 <p>
   <img alt=".NET 8" src="https://img.shields.io/badge/.NET-8.0-512BD4?logo=dotnet&logoColor=white">
@@ -72,35 +72,35 @@ and clicking a day filters the plan instantly.
 
 | Light | Dark |
 | --- | --- |
-| ![Dashboard light](docs/screenshots/dashboard-light.png) | ![Dashboard dark](docs/screenshots/dashboard-dark.png) |
+
 
 ### Task management
 
 Search, category pills, priority colors, inline edit/delete, and a collapsible creation
 form. Completing a task updates the dashboard metrics and raises a toast in real time.
 
-![Task management](docs/screenshots/tasks-light.png)
+
 
 ### Calendar & daily agenda
 
 The calendar is a real WPF `Calendar` with a custom template, not a static image.
 Selecting a date drives both the header label and the agenda panel.
 
-![Calendar dark](docs/screenshots/calendar-dark.png)
+
 
 ### AI assistant
 
 The assistant prefers a local Ollama model and falls back to Groq Cloud when the local
 server is unavailable. Responses are stored per conversation in SQLite.
 
-![AI assistant](docs/screenshots/chat-dark.png)
+
 
 ### Document tools
 
 Load a text-like document, preview it, and ask the active AI provider to extract tasks
 or summarize its content.
 
-![Document tools](docs/screenshots/doctools-light.png)
+
 
 ### Code notes
 
@@ -111,7 +111,7 @@ works completely offline.
 
 | Light | Dark |
 | --- | --- |
-| ![Code notes light](docs/screenshots/notes-light.png) | ![Code notes dark](docs/screenshots/notes-dark.png) |
+
 
 ### Encrypted key vault
 
@@ -126,16 +126,13 @@ is unlocked.
 - **Encrypted export/import** — move the vault between machines with a `.ditvault` file
   protected by its own password.
 
-| Light | Dark |
-| --- | --- |
-| ![Key vault light](docs/screenshots/vault-light.png) | ![Key vault dark](docs/screenshots/vault-dark.png) |
 
 ### Settings
 
 Configure the AI provider, endpoints, models and API key (masked by default), open the
 database folder, or load curated demo data.
 
-![Settings](docs/screenshots/settings-light.png)
+
 
 ---
 
