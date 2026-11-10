@@ -289,6 +289,47 @@ namespace DoItNow.Converters
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
             => throw new NotImplementedException();
     }
+
+    /// <summary>Indica si una categoría (o "All" para el filtro vacío) es la activa.</summary>
+    internal static class CategoryFilterState
+    {
+        public static bool IsActive(object value, object parameter)
+        {
+            var filter = parameter?.ToString();
+            if (string.Equals(filter, "All", StringComparison.OrdinalIgnoreCase))
+                return value is null;
+
+            return value is TaskCategory category
+                && Enum.TryParse<TaskCategory>(filter, true, out var parsed)
+                && category == parsed;
+        }
+    }
+
+    /// <summary>Fondo de la pastilla de categoría según el filtro activo.</summary>
+    public class CategoryFilterBackgroundConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            return CategoryFilterState.IsActive(value, parameter)
+                ? ThemeResources.Brush("PrimaryBrush", Color.FromRgb(32, 33, 58))
+                : ThemeResources.Brush("SurfaceHoverBrush", Color.FromRgb(232, 233, 244));
+        }
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+            => throw new NotImplementedException();
+    }
+
+    /// <summary>Texto de la pastilla de categoría según el filtro activo.</summary>
+    public class CategoryFilterForegroundConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            return CategoryFilterState.IsActive(value, parameter)
+                ? ThemeResources.Brush("TextOnDarkBrush", Colors.White)
+                : ThemeResources.Brush("TextOnMutedBrush", Color.FromRgb(69, 100, 127));
+        }
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+            => throw new NotImplementedException();
+    }
 }
 
 

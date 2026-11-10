@@ -70,7 +70,7 @@
     <!-- Task cards -->
     <SolidColorBrush x:Key="TaskCardHighBrush" Color="#6EC9FF"/>
     <SolidColorBrush x:Key="TaskCardMediumBrush" Color="#86A8C6"/>
-    <SolidColorBrush x:Key="TaskCardLowBrush" Color="#E2F2FF"/>
+    <SolidColorBrush x:Key="TaskCardLowBrush" Color="#CFE9FB"/>
     <SolidColorBrush x:Key="TaskCardHighTextBrush" Color="#0F2A40"/>
     <SolidColorBrush x:Key="TaskCardMediumTextBrush" Color="#17324D"/>
     <SolidColorBrush x:Key="TaskCardLowTextBrush" Color="#17324D"/>

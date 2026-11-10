@@ -29,7 +29,7 @@ namespace DoItNow.ViewModels
         [ObservableProperty] private DateTime _newDueDate = DateTime.Today;
         [ObservableProperty] private TaskItem? _selectedTask;
         [ObservableProperty] private bool _isEditing;
-        [ObservableProperty] private bool _isFormVisible = true;
+        [ObservableProperty] private bool _isFormVisible;
         [ObservableProperty] private bool _hasFilteredTasks;
 
         // Filtros reactivos
