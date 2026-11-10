@@ -22,9 +22,87 @@
                         <fa:IconImage Icon="Cog" Width="22" Height="22" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,10,0"/>
                         <TextBlock Text="Configuración del Sistema" FontSize="20" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
                     </StackPanel>
-                    <TextBlock Text="Gestiona la arquitectura de IA (Híbrida: Local con Ollama o Nube ultrarrápida con Groq) y la base de datos."
+                    <TextBlock Text="Personaliza la apariencia, la arquitectura de IA (Híbrida: Local con Ollama o Nube ultrarrápida con Groq) y la base de datos."
                                FontSize="12" Foreground="{DynamicResource TextSecondaryBrush}" Margin="32,4,0,0"/>
                 </StackPanel>
+
+                <!-- Section 0: Appearance / Themes -->
+                <Border Background="{DynamicResource SurfaceAltBrush}" CornerRadius="18" Padding="20" Margin="0,0,0,18">
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                            <fa:IconImage Icon="Palette" Width="16" Height="16" Foreground="{DynamicResource TextOnMutedBrush}" Margin="0,0,8,0"/>
+                            <TextBlock Text="Apariencia" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                        </StackPanel>
+                        <TextBlock Text="Elige el tema visual. El cambio se aplica al instante y se guarda automáticamente."
+                                   FontSize="11" Foreground="{DynamicResource TextMutedBrush}" Margin="0,0,0,12" TextWrapping="Wrap"/>
+
+                        <ListBox ItemsSource="{Binding AvailableThemes}"
+                                 SelectedItem="{Binding SelectedTheme, Mode=TwoWay}"
+                                 Background="Transparent" BorderThickness="0" Padding="0"
+                                 ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                            <ListBox.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <WrapPanel/>
+                                </ItemsPanelTemplate>
+                            </ListBox.ItemsPanel>
+                            <ListBox.ItemContainerStyle>
+                                <Style TargetType="ListBoxItem">
+                                    <Setter Property="Margin" Value="0,0,10,10"/>
+                                    <Setter Property="Padding" Value="0"/>
+                                    <Setter Property="Cursor" Value="Hand"/>
+                                    <Setter Property="Template">
+                                        <Setter.Value>
+                                            <ControlTemplate TargetType="ListBoxItem">
+                                                <Border x:Name="Card" CornerRadius="12" BorderThickness="2"
+                                                        BorderBrush="Transparent" Padding="3">
+                                                    <ContentPresenter/>
+                                                </Border>
+                                                <ControlTemplate.Triggers>
+                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                        <Setter TargetName="Card" Property="BorderBrush"
+                                                                Value="{DynamicResource BorderMediumBrush}"/>
+                                                    </Trigger>
+                                                    <Trigger Property="IsSelected" Value="True">
+                                                        <Setter TargetName="Card" Property="BorderBrush"
+                                                                Value="{DynamicResource AccentBrush}"/>
+                                                    </Trigger>
+                                                </ControlTemplate.Triggers>
+                                            </ControlTemplate>
+                                        </Setter.Value>
+                                    </Setter>
+                                </Style>
+                            </ListBox.ItemContainerStyle>
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+                                    <StackPanel Width="112">
+                                        <Border Height="56" CornerRadius="9" Padding="8"
+                                                Background="{Binding PreviewBackground}">
+                                            <Grid>
+                                                <Border Background="{Binding PreviewSurface}" CornerRadius="6"
+                                                        Margin="0,0,24,0">
+                                                    <TextBlock Text="Aa" FontSize="17" FontWeight="Bold"
+                                                               Foreground="{Binding PreviewText}"
+                                                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                </Border>
+                                                <Ellipse Width="16" Height="16" Fill="{Binding PreviewAccent}"
+                                                         HorizontalAlignment="Right" VerticalAlignment="Top"/>
+                                                <Ellipse Width="16" Height="16" Fill="{Binding PreviewAccent}"
+                                                         Opacity="0.55" HorizontalAlignment="Right" VerticalAlignment="Bottom"/>
+                                            </Grid>
+                                        </Border>
+                                        <StackPanel Orientation="Horizontal" Margin="2,6,0,0">
+                                            <fa:IconImage Icon="{Binding Icon}" Width="12" Height="12"
+                                                          Foreground="{DynamicResource TextMutedStrongBrush}"
+                                                          Margin="0,0,6,0" VerticalAlignment="Center"/>
+                                            <TextBlock Text="{Binding DisplayName}" FontSize="11" FontWeight="SemiBold"
+                                                       Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                        </StackPanel>
+                                    </StackPanel>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+                    </StackPanel>
+                </Border>
 
                 <!-- Section 1: AI Provider Mode (Híbrido) -->
                 <Border Background="{DynamicResource SurfaceAltBrush}" CornerRadius="18" Padding="20" Margin="0,0,0,18">

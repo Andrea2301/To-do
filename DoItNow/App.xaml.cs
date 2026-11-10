@@ -36,34 +36,30 @@ namespace DoItNow
             try
             {
                 var forced = ThemeService.ReadThemeArgument(args);
-                if (forced.HasValue)
+                if (!string.IsNullOrWhiteSpace(forced))
                 {
                     ThemeService.StartupOverride = forced;
-                    ThemeService.Apply(forced.Value);
+                    ThemeService.ApplyStartupOverride();
                     return;
                 }
 
                 var stored = new SettingsService()
-                    .GetSettingAsync(SettingsService.KeyTheme, "Claro")
+                    .GetSettingAsync(SettingsService.KeyTheme, ThemeService.DefaultId)
                     .GetAwaiter()
                     .GetResult();
 
                 if (string.IsNullOrWhiteSpace(stored))
                 {
-                    stored = SettingsService.ReadSettingFromFile(SettingsService.KeyTheme) ?? "Claro";
+                    stored = SettingsService.ReadSettingFromFile(SettingsService.KeyTheme) ?? ThemeService.DefaultId;
                 }
 
-                ThemeService.Apply(IsDarkName(stored));
+                ThemeService.Apply(stored);
             }
             catch
             {
                 // Si algo falla, el tema claro cargado por App.xaml sigue siendo válido.
             }
         }
-
-        private static bool IsDarkName(string? theme)
-            => theme?.Trim().Equals("Oscuro", StringComparison.OrdinalIgnoreCase) == true
-               || theme?.Trim().Equals("Dark", StringComparison.OrdinalIgnoreCase) == true;
 
         private void App_DispatcherUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
         {

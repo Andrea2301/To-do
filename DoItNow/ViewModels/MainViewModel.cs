@@ -47,23 +47,15 @@ namespace DoItNow.ViewModels
         [ObservableProperty] private string _currentSectionTitle = "Dashboard";
         [ObservableProperty] private string _activeViewMode = "Daily";
         [ObservableProperty] private string _formattedSelectedDate = string.Empty;
-        [ObservableProperty] private bool _isDarkTheme;
+        [ObservableProperty] private ThemeInfo _selectedTheme = ThemeService.Current;
         [ObservableProperty] private string _weekRangeLabel = string.Empty;
 
         public ObservableCollection<WeekDayItem> WeekDays { get; } = new();
 
-        public bool IsLightTheme
-        {
-            get => !IsDarkTheme;
-            set
-            {
-                if (value && IsDarkTheme)
-                    IsDarkTheme = false;
-            }
-        }
+        public IReadOnlyList<ThemeInfo> AvailableThemes => ThemeService.Themes;
 
         private readonly DispatcherTimer _clockTimer;
-        private bool _themeReady;
+        private bool _syncingTheme;
 
         public MainViewModel()
         {
@@ -123,16 +115,9 @@ namespace DoItNow.ViewModels
             };
             _clockTimer.Start();
 
-            // Tema: --theme=dark|light tiene prioridad sobre la preferencia guardada.
-            if (ThemeService.StartupOverride.HasValue)
-            {
-                ApplyThemeSilently(ThemeService.StartupOverride.Value);
-            }
-            else
-            {
-                IsDarkTheme = ThemeService.IsDark;
-                _ = LoadSavedThemeAsync();
-            }
+            // El tema ya se resolvió en App.OnStartup (CLI > base de datos > appsettings).
+            SelectedTheme = ThemeService.Current;
+            ThemeService.ThemeChanged += OnThemeServiceChanged;
 
             // Navegación inicial para demos/capturas: --section=tasks|calendar|chat|doctools|settings
             var sectionArg = Environment.GetCommandLineArgs()
@@ -151,44 +136,34 @@ namespace DoItNow.ViewModels
             }
         }
 
-        private async System.Threading.Tasks.Task LoadSavedThemeAsync()
+        private void OnThemeServiceChanged(ThemeInfo theme)
         {
+            if (SelectedTheme?.Id == theme.Id) return;
+
+            _syncingTheme = true;
             try
             {
-                var saved = await _settingsService.GetSettingAsync(SettingsService.KeyTheme, "Claro");
-                var dark = saved.Trim().Equals("Oscuro", StringComparison.OrdinalIgnoreCase)
-                           || saved.Trim().Equals("Dark", StringComparison.OrdinalIgnoreCase);
-
-                ApplyThemeSilently(dark);
+                SelectedTheme = theme;
             }
-            catch
+            finally
             {
-                // El tema claro por defecto sigue siendo válido.
+                _syncingTheme = false;
             }
         }
 
-        private void ApplyThemeSilently(bool dark)
+        partial void OnSelectedThemeChanged(ThemeInfo value)
         {
-            _themeReady = false;
-            IsDarkTheme = dark;
-            OnPropertyChanged(nameof(IsLightTheme));
-            _themeReady = true;
-        }
+            if (_syncingTheme) return;
 
-        partial void OnIsDarkThemeChanged(bool value)
-        {
-            ThemeService.Apply(value);
-            OnPropertyChanged(nameof(IsLightTheme));
-
-            if (!_themeReady) return;
+            ThemeService.Apply(value.Id);
 
             _ = _settingsService.SetSettingAsync(
                 SettingsService.KeyTheme,
-                value ? "Oscuro" : "Claro",
+                value.Id,
                 "Tema de la aplicación");
 
             ToastService.Info(
-                value ? "Modo oscuro activado 🌙" : "Modo claro activado ☀️",
+                $"Tema {value.DisplayName} activado",
                 "Tema actualizado");
         }
 
@@ -229,7 +204,19 @@ namespace DoItNow.ViewModels
         [RelayCommand]
         public void ToggleTheme()
         {
-            IsDarkTheme = !IsDarkTheme;
+            var themes = ThemeService.Themes;
+            var index = 0;
+
+            for (var i = 0; i < themes.Count; i++)
+            {
+                if (themes[i].Id == ThemeService.CurrentId)
+                {
+                    index = i;
+                    break;
+                }
+            }
+
+            SelectedTheme = themes[(index + 1) % themes.Count];
         }
 
         /// <summary>Navega a Tareas y abre el formulario de creación.</summary>

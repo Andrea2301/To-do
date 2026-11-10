@@ -28,7 +28,7 @@ namespace DoItNow.ViewModels
         [ObservableProperty] private string _groqApiKey = string.Empty;
         [ObservableProperty] private bool _isApiKeyVisible;
         [ObservableProperty] private string _aiProvider = "Auto";
-        [ObservableProperty] private string _theme = "Oscuro";
+        [ObservableProperty] private ThemeInfo? _selectedTheme;
         [ObservableProperty] private string _databasePath = AppDbContext.DatabasePath;
         [ObservableProperty] private string _statusMessage = string.Empty;
         [ObservableProperty] private bool _isSaving;
@@ -43,7 +43,9 @@ namespace DoItNow.ViewModels
         };
 
         public ObservableCollection<string> AvailableProviders { get; } = new() { "Auto", "Ollama", "Groq" };
-        public ObservableCollection<string> AvailableThemes { get; } = new() { "Oscuro", "Claro" };
+        public IReadOnlyList<ThemeInfo> AvailableThemes => ThemeService.Themes;
+
+        private bool _syncingTheme;
 
         /// <summary>Representación segura de la clave: nunca se muestra completa en pantalla.</summary>
         public string MaskedGroqApiKey => string.IsNullOrWhiteSpace(GroqApiKey)
@@ -52,6 +54,32 @@ namespace DoItNow.ViewModels
 
         partial void OnGroqApiKeyChanged(string value)
             => OnPropertyChanged(nameof(MaskedGroqApiKey));
+
+        partial void OnSelectedThemeChanged(ThemeInfo? value)
+        {
+            if (value == null || _syncingTheme) return;
+
+            ThemeService.Apply(value.Id);
+            _ = _settingsService.SetSettingAsync(
+                SettingsService.KeyTheme,
+                value.Id,
+                "Tema de la aplicación");
+        }
+
+        private void OnThemeServiceChanged(ThemeInfo theme)
+        {
+            if (SelectedTheme?.Id == theme.Id) return;
+
+            _syncingTheme = true;
+            try
+            {
+                SelectedTheme = theme;
+            }
+            finally
+            {
+                _syncingTheme = false;
+            }
+        }
 
         [RelayCommand]
         private void ToggleApiKeyVisibility() => IsApiKeyVisible = !IsApiKeyVisible;
@@ -62,6 +90,7 @@ namespace DoItNow.ViewModels
             _ollamaService = ollamaService ?? new OllamaService(_settingsService);
             _taskService = new TaskService();
 
+            ThemeService.ThemeChanged += OnThemeServiceChanged;
             _ = LoadSettingsAsync();
         }
 
@@ -83,7 +112,18 @@ namespace DoItNow.ViewModels
 
                 GroqApiKey = await _settingsService.GetGroqApiKeyAsync();
                 AiProvider = await _settingsService.GetAiProviderAsync();
-                Theme = await _settingsService.GetSettingAsync(SettingsService.KeyTheme, "Oscuro");
+
+                // El tema activo ya se resolvió al arrancar (CLI > base de datos > appsettings).
+                // Reflejamos ThemeService.Current para que el selector no contradiga la UI.
+                _syncingTheme = true;
+                try
+                {
+                    SelectedTheme = ThemeService.Current;
+                }
+                finally
+                {
+                    _syncingTheme = false;
+                }
 
                 await RefreshModelsAsync();
                 _isLoaded = true;
@@ -169,13 +209,13 @@ namespace DoItNow.ViewModels
                 var model = string.IsNullOrWhiteSpace(SelectedModel) ? "llama3.2" : SelectedModel;
                 var groqKey = GroqApiKey?.Trim() ?? string.Empty;
                 var provider = string.IsNullOrWhiteSpace(AiProvider) ? "Auto" : AiProvider;
-                var theme = string.IsNullOrWhiteSpace(Theme) ? "Oscuro" : Theme;
+                var themeId = SelectedTheme?.Id ?? ThemeService.CurrentId;
 
                 await _settingsService.SetSettingAsync(SettingsService.KeyOllamaUrl, url, "URL local o remota de Ollama");
                 await _settingsService.SetSettingAsync(SettingsService.KeyOllamaModel, model, "Modelo activo de Ollama");
                 await _settingsService.SetSettingAsync(SettingsService.KeyGroqApiKey, groqKey, "API Key de Groq Cloud");
                 await _settingsService.SetSettingAsync(SettingsService.KeyAiProvider, provider, "Proveedor activo de IA");
-                await _settingsService.SetSettingAsync(SettingsService.KeyTheme, theme, "Tema de la aplicación");
+                await _settingsService.SetSettingAsync(SettingsService.KeyTheme, themeId, "Tema de la aplicación");
 
                 var (_, _, badge) = await _ollamaService.GetActiveProviderStatusAsync();
                 StatusMessage = $"✓ ¡Guardado exitosamente! {badge}";

@@ -4,10 +4,8 @@
 
 DoItNow brings tasks, calendar, daily planning, a hybrid AI assistant, an encrypted key
 vault and a real code editor into a single focused workspace. It ships with a
-hand-crafted design system, a fully functional light/dark theme, meaningful animations,
+hand-crafted design system, eight selectable themes, meaningful animations,
 and a local-first data model.
-
-
 
 <p>
   <img alt=".NET 8" src="https://img.shields.io/badge/.NET-8.0-512BD4?logo=dotnet&logoColor=white">
@@ -34,8 +32,9 @@ screenshots.
 
 ## Highlights
 
-- **Real light & dark themes** — semantic brush tokens swapped at runtime, persisted
-  across sessions, with startup CLI override support.
+- **Eight selectable themes** — Claro, Oscuro, Sepia, Medianoche, Océano, Nord, Rosé and
+  Alto contraste. Semantic brush tokens are swapped at runtime and persisted across
+  sessions, with startup CLI override support.
 - **Live dashboard** — greeting, real today/week dates, pending/completed metrics and
   an animated progress bar driven by the database.
 - **Task management** — create, edit, complete, delete, search and filter by category
@@ -70,37 +69,25 @@ A real calendar on the left, a daily agenda, quick filters, and a plan board on 
 right. The week strip is generated from the selected date — no hardcoded labels —
 and clicking a day filters the plan instantly.
 
-| Light | Dark |
-| --- | --- |
-
-
 ### Task management
 
 Search, category pills, priority colors, inline edit/delete, and a collapsible creation
 form. Completing a task updates the dashboard metrics and raises a toast in real time.
-
-
 
 ### Calendar & daily agenda
 
 The calendar is a real WPF `Calendar` with a custom template, not a static image.
 Selecting a date drives both the header label and the agenda panel.
 
-
-
 ### AI assistant
 
 The assistant prefers a local Ollama model and falls back to Groq Cloud when the local
 server is unavailable. Responses are stored per conversation in SQLite.
 
-
-
 ### Document tools
 
 Load a text-like document, preview it, and ask the active AI provider to extract tasks
 or summarize its content.
-
-
 
 ### Code notes
 
@@ -108,10 +95,6 @@ A dedicated code editor replaces the Windows notepad for snippets and technical 
 It keeps line numbers, highlights syntax per language, tracks unsaved changes, and
 exports real source files with the right extension. Everything is stored locally, so it
 works completely offline.
-
-| Light | Dark |
-| --- | --- |
-
 
 ### Encrypted key vault
 
@@ -126,13 +109,17 @@ is unlocked.
 - **Encrypted export/import** — move the vault between machines with a `.ditvault` file
   protected by its own password.
 
-
 ### Settings
 
-Configure the AI provider, endpoints, models and API key (masked by default), open the
-database folder, or load curated demo data.
+Configure the theme, AI provider, endpoints, models and API key (masked by default), open
+the database folder, or load curated demo data.
 
+### Themes
 
+Eight palettes are available: Claro, Oscuro, Sepia, Medianoche, Océano, Nord, Rosé and
+Alto contraste. Switch them from the top bar or from **Settings → Apariencia**, where
+every option shows a live color preview. The choice is applied instantly and persisted
+without a restart.
 
 ---
 
@@ -191,8 +178,14 @@ DoItNow/
 │  ├─ Converters/                   # Theme-aware value converters
 │  ├─ Data/                         # EF Core DbContext + initialization
 │  └─ Styles/
-│     ├─ Themes/LightTheme.xaml     # Semantic light brushes
-│     ├─ Themes/DarkTheme.xaml      # Semantic dark brushes
+│     ├─ Themes/LightTheme.xaml     # Semantic palette: Claro
+│     ├─ Themes/DarkTheme.xaml      # Semantic palette: Oscuro
+│     ├─ Themes/SepiaTheme.xaml     # Semantic palette: Sepia
+│     ├─ Themes/MidnightTheme.xaml  # Semantic palette: Medianoche
+│     ├─ Themes/OceanTheme.xaml     # Semantic palette: Océano
+│     ├─ Themes/NordTheme.xaml      # Semantic palette: Nord
+│     ├─ Themes/RoseTheme.xaml      # Semantic palette: Rosé
+│     ├─ Themes/HighContrastTheme.xaml  # Semantic palette: Alto contraste
 │     ├─ ButtonStyle.xaml           # Buttons, combo boxes, inputs
 │     └─ CalendarStyles.xaml        # Custom WPF calendar template
 ├─ docs/screenshots/                # Portfolio screenshots
@@ -243,13 +236,15 @@ Copy-Item DoItNow/appsettings.example.json DoItNow/appsettings.json
     "GroqApiKey": "YOUR_GROQ_API_KEY"
   },
   "AppSettings": {
-    "Theme": "Claro"
+    "Theme": "dark"
   }
 }
 ```
 
 `Provider` accepts `Auto`, `Ollama` or `Groq`. In `Auto` mode the app uses Ollama when
-it is reachable and falls back to Groq otherwise.
+it is reachable and falls back to Groq otherwise. `Theme` accepts a theme id from the
+table in [Design system](#design-system); legacy values such as `Claro` and `Oscuro` are
+still understood.
 
 > **Security:** `appsettings.json` is git-ignored on purpose. Never commit real API
 > keys. The Settings screen masks keys by default and only reveals them on demand.
@@ -294,7 +289,7 @@ Useful for screenshots, demos and quick reviews:
 | Flag | Description |
 | --- | --- |
 | `--demo` | Loads curated tasks and a sample AI conversation (idempotent). |
-| `--theme=light` / `--theme=dark` | Overrides the saved theme at startup. |
+| `--theme=<id>` | Overrides the saved theme at startup (`light`, `dark`, `sepia`, `midnight`, `ocean`, `nord`, `rose`, `contrast`). |
 | `--section=dashboard` | Opens the dashboard. |
 | `--section=tasks` | Opens task management. |
 | `--section=calendar` | Opens the calendar. |
@@ -315,25 +310,40 @@ dotnet run --project DoItNow/DoItNow.csproj -- --demo --theme=dark --section=cal
 ## Design system
 
 The theme is not a filter or an overlay. Every view consumes semantic brushes such as
-`SurfaceBrush`, `TextPrimaryBrush` or `AccentBrush` through `DynamicResource`. At
-runtime, `ThemeService` swaps `LightTheme.xaml` for `DarkTheme.xaml`, and the whole UI
-updates instantly.
+`SurfaceBrush`, `TextPrimaryBrush` or `AccentBrush` through `DynamicResource`.
+`ThemeService` keeps a catalog of theme dictionaries and swaps them at runtime, so the
+whole UI updates instantly without touching a single view.
 
-Key tokens include:
+| Id | Name | Mood |
+| --- | --- | --- |
+| `light` | Claro | Lavender daylight with the signature lime accent |
+| `dark` | Oscuro | Deep lavender night with lime highlights |
+| `sepia` | Sepia | Warm paper surfaces and amber accents |
+| `midnight` | Medianoche | Deep navy with an electric blue accent |
+| `ocean` | Océano | Dark teal with a fresh aqua accent |
+| `nord` | Nord | Arctic slate with a frost-blue accent |
+| `rose` | Rosé | Soft blush surfaces with a vivid rose accent |
+| `contrast` | Alto contraste | Pure black, white text and high-visibility yellow |
+
+Themes can be switched from the top bar or from **Settings → Apariencia**, where each
+option includes a live color preview. The selection is persisted automatically.
+
+Every dictionary defines the same 55 semantic keys, grouped into:
 
 - **Surfaces** — cards, inputs, hover states and borders
 - **Text** — primary, secondary, muted and on-dark
-- **Accents** — the signature lime (`#CCF658`) and lavender palette
+- **Accents** — primary, accent and danger pairs
 - **Calendar** — panel, selected, today and timeline colors
 - **Task cards** — priority-specific background and foreground pairs
 
-Adding a new theme means creating one dictionary with the same keys — no view changes.
+Adding a new theme means creating one dictionary with the same keys and registering its
+`ThemeInfo` in the `ThemeService` catalog — no view changes required.
 
 ---
 
 ## Roadmap
 
-- [x] Functional light/dark theme with persistence
+- [x] Eight selectable themes with persistence and live previews
 - [x] Real calendar template and date-driven dashboard
 - [x] Toast notifications and section transitions
 - [x] Demo data and reproducible screenshot flags

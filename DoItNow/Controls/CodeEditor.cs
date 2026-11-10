@@ -122,7 +122,7 @@ namespace DoItNow.Controls
             }
         }
 
-        private void OnThemeChanged(bool dark) => ApplyTheme();
+        private void OnThemeChanged(ThemeInfo theme) => ApplyTheme();
 
         private void ApplyTheme()
         {
