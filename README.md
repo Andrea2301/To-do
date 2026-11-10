@@ -4,7 +4,7 @@
 
 DoItNow brings tasks, calendar, daily planning, a hybrid AI assistant, an encrypted key
 vault and a real code editor into a single focused workspace. It ships with a
-hand-crafted design system, eight selectable themes, meaningful animations,
+hand-crafted design system, nine selectable themes, meaningful animations,
 and a local-first data model.
 
 <p>
@@ -32,8 +32,8 @@ screenshots.
 
 ## Highlights
 
-- **Eight selectable themes** — Claro, Oscuro, Sepia, Medianoche, Océano, Nord, Rosé and
-  Alto contraste. Semantic brush tokens are swapped at runtime and persisted across
+- **Nine selectable themes** — Claro, Oscuro, Sepia, Medianoche, Océano, Nord, Rosé,
+  Cinnamoroll and Alto contraste. Semantic brush tokens are swapped at runtime and persisted across
   sessions, with startup CLI override support.
 - **Live dashboard** — greeting, real today/week dates, pending/completed metrics and
   an animated progress bar driven by the database.
@@ -116,8 +116,8 @@ the database folder, or load curated demo data.
 
 ### Themes
 
-Eight palettes are available: Claro, Oscuro, Sepia, Medianoche, Océano, Nord, Rosé and
-Alto contraste. Switch them from the top bar or from **Settings → Apariencia**, where
+Nine palettes are available: Claro, Oscuro, Sepia, Medianoche, Océano, Nord, Rosé,
+Cinnamoroll and Alto contraste. Switch them from the top bar or from **Settings → Apariencia**, where
 every option shows a live color preview. The choice is applied instantly and persisted
 without a restart.
 
@@ -185,6 +185,7 @@ DoItNow/
 │     ├─ Themes/OceanTheme.xaml     # Semantic palette: Océano
 │     ├─ Themes/NordTheme.xaml      # Semantic palette: Nord
 │     ├─ Themes/RoseTheme.xaml      # Semantic palette: Rosé
+│     ├─ Themes/CinnamorollTheme.xaml   # Semantic palette: Cinnamoroll
 │     ├─ Themes/HighContrastTheme.xaml  # Semantic palette: Alto contraste
 │     ├─ ButtonStyle.xaml           # Buttons, combo boxes, inputs
 │     └─ CalendarStyles.xaml        # Custom WPF calendar template
@@ -289,7 +290,7 @@ Useful for screenshots, demos and quick reviews:
 | Flag | Description |
 | --- | --- |
 | `--demo` | Loads curated tasks and a sample AI conversation (idempotent). |
-| `--theme=<id>` | Overrides the saved theme at startup (`light`, `dark`, `sepia`, `midnight`, `ocean`, `nord`, `rose`, `contrast`). |
+| `--theme=<id>` | Overrides the saved theme at startup (`light`, `dark`, `sepia`, `midnight`, `ocean`, `nord`, `rose`, `cinnamoroll`, `contrast`). |
 | `--section=dashboard` | Opens the dashboard. |
 | `--section=tasks` | Opens task management. |
 | `--section=calendar` | Opens the calendar. |
@@ -323,6 +324,7 @@ whole UI updates instantly without touching a single view.
 | `ocean` | Océano | Dark teal with a fresh aqua accent |
 | `nord` | Nord | Arctic slate with a frost-blue accent |
 | `rose` | Rosé | Soft blush surfaces with a vivid rose accent |
+| `cinnamoroll` | Cinnamoroll | Dreamy pastel blue, cloud whites and a sky-blue accent |
 | `contrast` | Alto contraste | Pure black, white text and high-visibility yellow |
 
 Themes can be switched from the top bar or from **Settings → Apariencia**, where each
@@ -343,7 +345,7 @@ Adding a new theme means creating one dictionary with the same keys and register
 
 ## Roadmap
 
-- [x] Eight selectable themes with persistence and live previews
+- [x] Nine selectable themes with persistence and live previews
 - [x] Real calendar template and date-driven dashboard
 - [x] Toast notifications and section transitions
 - [x] Demo data and reproducible screenshot flags

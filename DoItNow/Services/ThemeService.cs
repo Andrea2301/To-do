@@ -106,6 +106,12 @@ namespace DoItNow.Services
                 Aliases = new[] { "Rose", "Rosé", "Rosa" }
             },
             new ThemeInfo(
+                "cinnamoroll", "Cinnamoroll", "Styles/Themes/CinnamorollTheme.xaml", false, IconChar.Cloud,
+                "#8FC2EA", "#FFFFFF", "#6EC9FF", "#17324D")
+            {
+                Aliases = new[] { "Cinnamoroll", "Cinnamon", "Cinnamon Roll", "Nube", "Cloud", "Cielo", "Azulito" }
+            },
+            new ThemeInfo(
                 "contrast", "Alto contraste", "Styles/Themes/HighContrastTheme.xaml", true, IconChar.Adjust,
                 "#000000", "#000000", "#FFE500", "#FFFFFF")
             {

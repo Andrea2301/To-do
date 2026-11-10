@@ -1,0 +1,80 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- ============================================================
+         DoItNow · Cinnamoroll theme
+         Dreamy pastel-blue surfaces, cloud whites and a sky-blue accent.
+         ============================================================ -->
+
+    <!-- Base / window -->
+    <LinearGradientBrush x:Key="AppBackgroundBrush" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#B5DFFF" Offset="0"/>
+        <GradientStop Color="#8FC2EA" Offset="0.55"/>
+        <GradientStop Color="#A6D4F6" Offset="1"/>
+    </LinearGradientBrush>
+    <SolidColorBrush x:Key="GlowBrush" Color="#FFFFFF" Opacity="0.30"/>
+    <Color x:Key="WindowShadowColor">#3E6080</Color>
+    <Color x:Key="CardShadowColor">#4C7093</Color>
+
+    <!-- Surfaces -->
+    <SolidColorBrush x:Key="SurfaceBrush" Color="#FFFFFF"/>
+    <SolidColorBrush x:Key="SurfaceAltBrush" Color="#F7FBFF"/>
+    <SolidColorBrush x:Key="SurfaceMutedBrush" Color="#EAF5FF"/>
+    <SolidColorBrush x:Key="SurfaceHoverBrush" Color="#DDEFFF"/>
+    <SolidColorBrush x:Key="SurfaceInputBrush" Color="#F3F9FF"/>
+    <SolidColorBrush x:Key="SurfaceInputAltBrush" Color="#F8FCFF"/>
+    <SolidColorBrush x:Key="SurfaceDisabledBrush" Color="#EDF4FA"/>
+    <SolidColorBrush x:Key="ChipBrush" Color="#E2F2FF"/>
+    <SolidColorBrush x:Key="BorderSoftBrush" Color="#D4E9FA"/>
+    <SolidColorBrush x:Key="BorderMediumBrush" Color="#C3DFF5"/>
+
+    <!-- Text -->
+    <SolidColorBrush x:Key="TextPrimaryBrush" Color="#17324D"/>
+    <SolidColorBrush x:Key="TextStrongBrush" Color="#2A4A68"/>
+    <SolidColorBrush x:Key="TextSecondaryBrush" Color="#5E7E9C"/>
+    <SolidColorBrush x:Key="TextMutedStrongBrush" Color="#5A7A98"/>
+    <SolidColorBrush x:Key="TextMutedBrush" Color="#7391AC"/>
+    <SolidColorBrush x:Key="TextSubtleBrush" Color="#86A2BB"/>
+    <SolidColorBrush x:Key="TextOnMutedBrush" Color="#45647F"/>
+    <SolidColorBrush x:Key="TextOnDarkBrush" Color="#FFFFFF"/>
+    <SolidColorBrush x:Key="HeaderTextBrush" Color="#F2F9FF"/>
+    <SolidColorBrush x:Key="HeaderSubtleBrush" Color="#DDEEFC"/>
+    <SolidColorBrush x:Key="StatLabelBrush" Color="#E8F4FF"/>
+
+    <!-- Primary / accents -->
+    <SolidColorBrush x:Key="PrimaryBrush" Color="#1F3F5C"/>
+    <SolidColorBrush x:Key="PrimaryHoverBrush" Color="#2C5678"/>
+    <SolidColorBrush x:Key="PrimarySoftBrush" Color="#356385"/>
+    <SolidColorBrush x:Key="RailHoverBrush" Color="#8CB4D6"/>
+    <SolidColorBrush x:Key="RailIconBrush" Color="#F1F9FF"/>
+    <SolidColorBrush x:Key="AccentBrush" Color="#6EC9FF"/>
+    <SolidColorBrush x:Key="AccentSoftBrush" Color="#5FBEFF"/>
+    <SolidColorBrush x:Key="AccentInkBrush" Color="#0F2A40"/>
+    <SolidColorBrush x:Key="AccentInkDeepBrush" Color="#0A2033"/>
+    <SolidColorBrush x:Key="DangerSoftBrush" Color="#FCE0E4"/>
+    <SolidColorBrush x:Key="DangerTextBrush" Color="#A3243B"/>
+
+    <!-- Calendar -->
+    <SolidColorBrush x:Key="CalendarPanelBrush" Color="#6E9FC7"/>
+    <SolidColorBrush x:Key="CalendarTextBrush" Color="#FFFFFF"/>
+    <SolidColorBrush x:Key="CalendarSubTextBrush" Color="#E6F3FF"/>
+    <SolidColorBrush x:Key="CalendarDayHoverBrush" Color="#7FB0D6"/>
+    <SolidColorBrush x:Key="CalendarSelectedBrush" Color="#1F3F5C"/>
+    <SolidColorBrush x:Key="CalendarSelectedTextBrush" Color="#FFFFFF"/>
+    <SolidColorBrush x:Key="CalendarTodayBrush" Color="#6EC9FF"/>
+    <SolidColorBrush x:Key="CalendarTodayTextBrush" Color="#0F2A40"/>
+    <SolidColorBrush x:Key="TimelineLineBrush" Color="#C9E2F5"/>
+    <SolidColorBrush x:Key="TimelineDotBrush" Color="#6E9FC7"/>
+    <SolidColorBrush x:Key="GridLineBrush" Color="#EAF5FF"/>
+
+    <!-- Task cards -->
+    <SolidColorBrush x:Key="TaskCardHighBrush" Color="#6EC9FF"/>
+    <SolidColorBrush x:Key="TaskCardMediumBrush" Color="#86A8C6"/>
+    <SolidColorBrush x:Key="TaskCardLowBrush" Color="#E2F2FF"/>
+    <SolidColorBrush x:Key="TaskCardHighTextBrush" Color="#0F2A40"/>
+    <SolidColorBrush x:Key="TaskCardMediumTextBrush" Color="#17324D"/>
+    <SolidColorBrush x:Key="TaskCardLowTextBrush" Color="#17324D"/>
+    <SolidColorBrush x:Key="CheckboxBorderBrush" Color="#8BB4D4"/>
+    <SolidColorBrush x:Key="BellBrush" Color="#2C5678"/>
+
+</ResourceDictionary>
