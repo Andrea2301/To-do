@@ -46,6 +46,7 @@ namespace DoItNow.ViewModels
         [ObservableProperty] private string _currentDate = string.Empty;
         [ObservableProperty] private string _currentSectionTitle = "Dashboard";
         [ObservableProperty] private string _activeViewMode = "Daily";
+        [ObservableProperty] private string _aiMode = "Chat";
         [ObservableProperty] private string _formattedSelectedDate = string.Empty;
         [ObservableProperty] private ThemeInfo _selectedTheme = ThemeService.Current;
         [ObservableProperty] private string _weekRangeLabel = string.Empty;
@@ -251,11 +252,14 @@ namespace DoItNow.ViewModels
                     break;
                 case "chat":
                 case "ai":
-                    NavigateToChat();
+                case "asistente":
+                    NavigateToAi("Chat");
                     break;
                 case "doctools":
                 case "docs":
-                    NavigateToDocTools();
+                case "doc":
+                case "documentos":
+                    NavigateToAi("Docs");
                     break;
                 case "settings":
                 case "config":
@@ -325,21 +329,30 @@ namespace DoItNow.ViewModels
             CurrentSectionTitle = "🔐  Bóveda de claves";
         }
 
+        /// <summary>Cambia entre los dos modos del workspace de IA.</summary>
         [RelayCommand]
-        private void NavigateToChat()
+        public void SetAiMode(string? mode)
         {
-            CurrentView = AiChat;
-            ActiveSection = "Chat";
-            CurrentSectionTitle = "🤖  Asistente IA (Ollama)";
-            _ = AiChat.CheckOllamaStatusAsync();
+            if (string.IsNullOrWhiteSpace(mode)) return;
+
+            AiMode = string.Equals(mode, "Docs", StringComparison.OrdinalIgnoreCase)
+                ? "Docs"
+                : "Chat";
         }
 
+        /// <summary>Abre el workspace de IA en el modo indicado (o mantiene el actual).</summary>
         [RelayCommand]
-        private void NavigateToDocTools()
+        private void NavigateToAi(string? mode = null)
         {
-            CurrentView = DocTools;
-            ActiveSection = "DocTools";
-            CurrentSectionTitle = "⚡  Doc & PDF Tools";
+            if (!string.IsNullOrWhiteSpace(mode))
+                SetAiMode(mode);
+
+            CurrentView = AiMode == "Docs" ? DocTools : AiChat;
+            ActiveSection = "Ai";
+            CurrentSectionTitle = "🤖  Asistente IA";
+
+            if (AiMode == "Chat")
+                _ = AiChat.CheckOllamaStatusAsync();
         }
 
         [RelayCommand]

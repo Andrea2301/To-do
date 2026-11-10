@@ -41,10 +41,9 @@ screenshots.
   and priority, with toast feedback and an inline creation form.
 - **Calendar & agenda** — a fully working WPF `CalendarItem` template (`PART_MonthView`
   / `PART_YearView`) plus per-day task filtering.
-- **Hybrid AI assistant** — local [Ollama](https://ollama.com) inference with automatic
-  fallback to [Groq Cloud](https://console.groq.com) for low-latency replies.
-- **Document intelligence** — load notes or text files and extract actionable tasks
-  with the active AI provider.
+- **Hybrid AI workspace** — local [Ollama](https://ollama.com) inference with automatic
+  fallback to [Groq Cloud](https://console.groq.com), in one place: a conversational
+  assistant and a document mode that turns notes or text files into actionable tasks.
 - **Encrypted key vault** — store API keys, tokens and passwords protected with
   AES-256-GCM. Optional master password (PBKDF2-SHA256) or transparent protection via
   Windows DPAPI; secrets stay masked until you reveal them.
@@ -79,15 +78,14 @@ form. Completing a task updates the dashboard metrics and raises a toast in real
 The calendar is a real WPF `Calendar` with a custom template, not a static image.
 Selecting a date drives both the header label and the agenda panel.
 
-### AI assistant
+### AI workspace
 
-The assistant prefers a local Ollama model and falls back to Groq Cloud when the local
-server is unavailable. Responses are stored per conversation in SQLite.
+One module with two modes, switched from a segmented control at the top:
 
-### Document tools
-
-Load a text-like document, preview it, and ask the active AI provider to extract tasks
-or summarize its content.
+- **Chat** — the assistant prefers a local Ollama model and falls back to Groq Cloud when
+  the local server is unavailable. Responses are stored per conversation in SQLite.
+- **Documents** — load a text-like document, preview it, and ask the active AI provider
+  to extract tasks or summarize its content.
 
 ### Code notes
 
@@ -170,7 +168,7 @@ DoItNow/
 ├─ DoItNow/
 │  ├─ App.xaml / App.xaml.cs        # Startup, theme bootstrap, global error handling
 │  ├─ MainWindow.xaml(.cs)          # Shell, navigation, toasts, window chrome
-│  ├─ Views/                        # Dashboard, Tasks, Calendar, Notes, Vault, AI, DocTools, Settings
+│  ├─ Views/                        # Dashboard, Tasks, Calendar, Notes, Vault, AI workspace, Settings
 │  ├─ ViewModels/                   # Main + per-module view models
 │  ├─ Models/                       # Task, SubTask, Chat, Settings, VaultEntry, CodeNote
 │  ├─ Services/                     # Task, Notes, Vault, Crypto, AI, Theme, Dialog, Toast
@@ -296,8 +294,8 @@ Useful for screenshots, demos and quick reviews:
 | `--section=calendar` | Opens the calendar. |
 | `--section=notes` | Opens code notes. |
 | `--section=vault` | Opens the encrypted key vault. |
-| `--section=chat` | Opens the AI assistant. |
-| `--section=doctools` | Opens document tools. |
+| `--section=chat` | Opens the AI workspace in Chat mode. |
+| `--section=doctools` | Opens the AI workspace in Documents mode. |
 | `--section=settings` | Opens settings. |
 
 Example:

@@ -158,6 +158,15 @@ namespace DoItNow.Converters
             => throw new NotImplementedException();
     }
 
+    /// <summary>Muestra el elemento si el string está vacío (estado vacío).</summary>
+    public class StringEmptyToVisibilityConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+            => string.IsNullOrWhiteSpace(value?.ToString()) ? Visibility.Visible : Visibility.Collapsed;
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+            => throw new NotImplementedException();
+    }
+
     /// <summary>Fondo de tarjeta de tarea estilo TimeFrame (Lima vibrante, Púrpura pizarra, Lila pastel).</summary>
     public class PriorityToCardBrushConverter : IValueConverter
     {
@@ -324,6 +333,19 @@ namespace DoItNow.Converters
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
             return CategoryFilterState.IsActive(value, parameter)
+                ? ThemeResources.Brush("TextOnDarkBrush", Colors.White)
+                : ThemeResources.Brush("TextOnMutedBrush", Color.FromRgb(69, 100, 127));
+        }
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+            => throw new NotImplementedException();
+    }
+
+    /// <summary>Color de texto para una pestaña activa comparada por cadena.</summary>
+    public class StringEqualsToForegroundConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            return value?.ToString() == parameter?.ToString()
                 ? ThemeResources.Brush("TextOnDarkBrush", Colors.White)
                 : ThemeResources.Brush("TextOnMutedBrush", Color.FromRgb(69, 100, 127));
         }

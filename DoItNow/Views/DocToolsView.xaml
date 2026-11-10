@@ -11,9 +11,10 @@
     <UserControl.Resources>
         <conv:BoolToVisibilityConverter x:Key="BoolToVis"/>
         <conv:BoolToInverseVisibilityConverter x:Key="InvBoolToVis"/>
+        <conv:StringEmptyToVisibilityConverter x:Key="StrEmptyVis"/>
     </UserControl.Resources>
 
-    <Border Background="{DynamicResource SurfaceBrush}" CornerRadius="22" Padding="28,24">
+    <Border Background="{DynamicResource SurfaceBrush}" CornerRadius="22" Padding="24,20">
         <Grid>
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/> <!-- Header -->
@@ -32,9 +33,9 @@
                 <StackPanel VerticalAlignment="Center">
                     <StackPanel Orientation="Horizontal">
                         <fa:IconImage Icon="FileAlt" Width="20" Height="20" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,10,0"/>
-                        <TextBlock Text="Doc &amp; File Tools — Extractor Inteligente con IA" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                        <TextBlock Text="Extrae tareas desde tus documentos" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
                     </StackPanel>
-                    <TextBlock Text="Carga un documento, resumen o apunte para que Ollama extraiga automáticamente tareas accionables."
+                    <TextBlock Text="Carga un archivo o pega texto y la IA detectará las tareas accionables."
                                FontSize="12" Foreground="{DynamicResource TextSecondaryBrush}" Margin="30,4,0,0"/>
                 </StackPanel>
 
@@ -73,7 +74,7 @@
                         </Button.Resources>
                         <StackPanel Orientation="Horizontal">
                             <fa:IconImage Icon="FolderOpen" Width="14" Height="14" Foreground="{DynamicResource AccentBrush}" Margin="0,0,8,0"/>
-                            <TextBlock Text="Seleccionar Archivo" FontSize="12" FontWeight="Bold" Foreground="White"/>
+                            <TextBlock Text="Seleccionar archivo" FontSize="12" FontWeight="Bold" Foreground="White"/>
                         </StackPanel>
                     </Button>
                 </Grid>
@@ -91,14 +92,32 @@
                     <TextBlock Text="{Binding WordCount, StringFormat='{}{0} palabras'}" FontSize="10" Foreground="{DynamicResource TextMutedBrush}" HorizontalAlignment="Right"/>
                 </Grid>
 
-                <TextBox Grid.Row="1" Text="{Binding ExtractedText, UpdateSourceTrigger=PropertyChanged}"
-                         AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto"
-                         Background="{DynamicResource SurfaceAltBrush}" BorderBrush="{DynamicResource BorderSoftBrush}" BorderThickness="1"
-                         FontSize="12" FontFamily="Segoe UI" Padding="14">
-                    <TextBox.Resources>
-                        <Style TargetType="Border"><Setter Property="CornerRadius" Value="14"/></Style>
-                    </TextBox.Resources>
-                </TextBox>
+                <Grid Grid.Row="1">
+                    <TextBox Text="{Binding ExtractedText, UpdateSourceTrigger=PropertyChanged}"
+                             AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto"
+                             Background="{DynamicResource SurfaceAltBrush}" BorderBrush="{DynamicResource BorderSoftBrush}" BorderThickness="1"
+                             FontSize="12" FontFamily="Segoe UI" Padding="14">
+                        <TextBox.Resources>
+                            <Style TargetType="Border"><Setter Property="CornerRadius" Value="14"/></Style>
+                        </TextBox.Resources>
+                    </TextBox>
+
+                    <!-- Estado vacío -->
+                    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center"
+                                IsHitTestVisible="False" Margin="0,0,0,10"
+                                Visibility="{Binding ExtractedText, Converter={StaticResource StrEmptyVis}}">
+                        <fa:IconImage Icon="FileCirclePlus" Width="34" Height="34"
+                                      Foreground="{DynamicResource TextSubtleBrush}"
+                                      HorizontalAlignment="Center" Margin="0,0,0,10"/>
+                        <TextBlock Text="Arrastra un documento o pega el texto aquí"
+                                   FontSize="13" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource TextSecondaryBrush}"
+                                   HorizontalAlignment="Center"/>
+                        <TextBlock Text="La vista previa aparecerá en este espacio."
+                                   FontSize="11" Foreground="{DynamicResource TextMutedBrush}"
+                                   HorizontalAlignment="Center" Margin="0,3,0,0"/>
+                    </StackPanel>
+                </Grid>
             </Grid>
 
             <!-- 4. AI Action Bar -->
@@ -122,7 +141,7 @@
                         </Button.Resources>
                         <StackPanel Orientation="Horizontal">
                             <fa:IconImage Icon="Magic" Width="14" Height="14" Foreground="{DynamicResource AccentInkBrush}" Margin="0,0,8,0"/>
-                            <TextBlock Text="⚡ Extraer Tareas con Ollama" FontSize="12" FontWeight="Bold" Foreground="{DynamicResource AccentInkBrush}"/>
+                            <TextBlock Text="Extraer tareas con IA" FontSize="12" FontWeight="Bold" Foreground="{DynamicResource AccentInkBrush}"/>
                         </StackPanel>
                     </Button>
                 </Grid>

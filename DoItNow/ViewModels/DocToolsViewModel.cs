@@ -73,7 +73,7 @@ namespace DoItNow.ViewModels
             }
 
             IsProcessing = true;
-            StatusMessage = "🤖 Ollama está analizando el documento y extrayendo tareas pendientes...";
+            StatusMessage = "🤖 La IA está analizando el documento y extrayendo tareas pendientes...";
 
             try
             {
@@ -111,11 +111,11 @@ namespace DoItNow.ViewModels
 
                 StatusMessage = countAdded > 0
                     ? $"🎉 ¡Éxito! Se crearon {countAdded} tareas automáticamente en tu lista."
-                    : "ℹ️ Ollama analizó el texto pero no encontró tareas explícitas.";
+                    : "ℹ️ La IA analizó el texto pero no encontró tareas explícitas.";
             }
             catch (Exception ex)
             {
-                StatusMessage = $"❌ Error con Ollama: {ex.Message}";
+                StatusMessage = $"❌ Error de IA: {ex.Message}";
             }
             finally
             {

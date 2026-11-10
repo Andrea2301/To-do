@@ -32,6 +32,7 @@
         <conv:StringEqualsToBrushConverter x:Key="StrEqBrush"/>
         <conv:CategoryFilterBackgroundConverter x:Key="CatFilterBg"/>
         <conv:CategoryFilterForegroundConverter x:Key="CatFilterFg"/>
+        <conv:StringEqualsToForegroundConverter x:Key="StrEqFg"/>
 
         <!-- Pill Nav Button Style -->
         <Style x:Key="RailCircleButton" TargetType="Button">
@@ -461,21 +462,14 @@
                             <fa:IconImage Icon="Key" Width="17" Height="17" Foreground="{DynamicResource AccentBrush}"/>
                         </Button>
 
-                        <!-- 6. AI Chat (Ollama) -->
+                        <!-- 6. Asistente IA (chat + documentos) -->
                         <Button Style="{StaticResource RailCircleButton}"
-                                Background="{Binding ActiveSection, Converter={StaticResource StrEqBrush}, ConverterParameter='Chat'}"
-                                Command="{Binding NavigateToChatCommand}" ToolTip="Asistente IA (Ollama)">
+                                Background="{Binding ActiveSection, Converter={StaticResource StrEqBrush}, ConverterParameter='Ai'}"
+                                Command="{Binding NavigateToAiCommand}" ToolTip="Asistente IA">
                             <fa:IconImage Icon="Robot" Width="17" Height="17" Foreground="{DynamicResource AccentBrush}"/>
                         </Button>
 
-                        <!-- 7. Doc & PDF Tools -->
-                        <Button Style="{StaticResource RailCircleButton}"
-                                Background="{Binding ActiveSection, Converter={StaticResource StrEqBrush}, ConverterParameter='DocTools'}"
-                                Command="{Binding NavigateToDocToolsCommand}" ToolTip="Doc &amp; File Tools">
-                            <fa:IconImage Icon="FileAlt" Width="17" Height="17" Foreground="{DynamicResource RailIconBrush}"/>
-                        </Button>
-
-                        <!-- 8. Settings -->
+                        <!-- 7. Settings -->
                         <Button Style="{StaticResource RailCircleButton}"
                                 Background="{Binding ActiveSection, Converter={StaticResource StrEqBrush}, ConverterParameter='Settings'}"
                                 Command="{Binding NavigateToSettingsCommand}" ToolTip="Configuración">
@@ -1498,16 +1492,59 @@
                 <views:VaultView DataContext="{Binding Vault}"/>
             </Grid>
 
-            <!-- 6. AI CHAT VIEW (OLLAMA) -->
+            <!-- 6. ASISTENTE IA (CHAT + DOCUMENTOS) -->
             <Grid Style="{StaticResource SectionTransition}"
-                  Visibility="{Binding ActiveSection, Converter={StaticResource StrEqVis}, ConverterParameter='Chat'}">
-                <views:AiChatView DataContext="{Binding AiChat}"/>
-            </Grid>
+                  Visibility="{Binding ActiveSection, Converter={StaticResource StrEqVis}, ConverterParameter='Ai'}">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
 
-            <!-- 7. DOC & PDF TOOLS VIEW -->
-            <Grid Style="{StaticResource SectionTransition}"
-                  Visibility="{Binding ActiveSection, Converter={StaticResource StrEqVis}, ConverterParameter='DocTools'}">
-                <views:DocToolsView DataContext="{Binding DocTools}"/>
+                <!-- Selector de modo -->
+                <Border Grid.Row="0" Background="{DynamicResource SurfaceBrush}" CornerRadius="16"
+                        Padding="5" Margin="0,0,0,12" HorizontalAlignment="Left">
+                    <StackPanel Orientation="Horizontal">
+                        <Button Command="{Binding SetAiModeCommand}" CommandParameter="Chat"
+                                Background="Transparent" BorderThickness="0" Cursor="Hand" Margin="0,0,4,0">
+                            <Border Background="{Binding AiMode, Converter={StaticResource StrEqBrush}, ConverterParameter='Chat'}"
+                                    CornerRadius="12" Padding="16,8">
+                                <StackPanel Orientation="Horizontal">
+                                    <fa:IconImage Icon="Comments" Width="13" Height="13"
+                                                  Foreground="{Binding AiMode, Converter={StaticResource StrEqFg}, ConverterParameter='Chat'}"
+                                                  Margin="0,0,7,0"/>
+                                    <TextBlock Text="Chat" FontSize="12" FontWeight="SemiBold"
+                                               Foreground="{Binding AiMode, Converter={StaticResource StrEqFg}, ConverterParameter='Chat'}"/>
+                                </StackPanel>
+                            </Border>
+                        </Button>
+
+                        <Button Command="{Binding SetAiModeCommand}" CommandParameter="Docs"
+                                Background="Transparent" BorderThickness="0" Cursor="Hand">
+                            <Border Background="{Binding AiMode, Converter={StaticResource StrEqBrush}, ConverterParameter='Docs'}"
+                                    CornerRadius="12" Padding="16,8">
+                                <StackPanel Orientation="Horizontal">
+                                    <fa:IconImage Icon="FileAlt" Width="13" Height="13"
+                                                  Foreground="{Binding AiMode, Converter={StaticResource StrEqFg}, ConverterParameter='Docs'}"
+                                                  Margin="0,0,7,0"/>
+                                    <TextBlock Text="Documentos" FontSize="12" FontWeight="SemiBold"
+                                               Foreground="{Binding AiMode, Converter={StaticResource StrEqFg}, ConverterParameter='Docs'}"/>
+                                </StackPanel>
+                            </Border>
+                        </Button>
+                    </StackPanel>
+                </Border>
+
+                <!-- Contenido del modo activo -->
+                <Grid Grid.Row="1">
+                    <Grid Style="{StaticResource SectionTransition}"
+                          Visibility="{Binding AiMode, Converter={StaticResource StrEqVis}, ConverterParameter='Chat'}">
+                        <views:AiChatView DataContext="{Binding AiChat}"/>
+                    </Grid>
+                    <Grid Style="{StaticResource SectionTransition}"
+                          Visibility="{Binding AiMode, Converter={StaticResource StrEqVis}, ConverterParameter='Docs'}">
+                        <views:DocToolsView DataContext="{Binding DocTools}"/>
+                    </Grid>
+                </Grid>
             </Grid>
 
             <!-- 8. SETTINGS VIEW -->
