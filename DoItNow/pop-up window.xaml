@@ -1,0 +1,53 @@
+﻿<UserControl x:Class="DoItNow.pop_up_window"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:DoItNow"
+              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             mc:Ignorable="d" 
+             Height="450" Width="700">
+
+
+    <materialDesign:Card UniformCornerRadius="10"
+                         Background="White"
+                         Height="340"
+                         VerticalAlignment="Center"
+                         Margin="0,0,105,0">
+
+        <StackPanel Orientation="Vertical" HorizontalAlignment="Center" VerticalAlignment="Center" Height="340">
+            <TextBlock Text="New Event"
+               FontSize="18"
+               FontWeight="Bold"
+               Background="#bda6ff"
+               Margin="0,0,0,30"
+               Foreground="#2c0077"
+               Height="35" Width="595"
+               TextAlignment="Center"/>
+
+            <!-- Campo de texto para el título del evento -->
+            <TextBox x:Name="eventTitleTextBox"
+                    Style="{StaticResource TextBox}"/>
+
+            <!-- Campo para seleccionar la fecha -->
+            <DatePicker x:Name="eventDatePicker"
+                        Style="{StaticResource date}"/>
+
+            <!-- Botones para añadir o editar eventos -->
+
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,10,0,0">
+            <Button Content="Save"
+            Style="{StaticResource Buttons}"/>
+
+                <Button
+                    Content="Edit"
+                    Style="{StaticResource Buttons}"
+            />
+            </StackPanel>
+        </StackPanel>
+
+
+
+    </materialDesign:Card>
+
+</UserControl>

@@ -1,0 +1,159 @@
+<UserControl x:Class="DoItNow.Views.AiChatView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:fa="http://schemas.awesome.incremented/wpf/xaml/fontawesome.sharp"
+             xmlns:conv="clr-namespace:DoItNow.Converters"
+             mc:Ignorable="d" 
+             d:DesignHeight="600" d:DesignWidth="900">
+
+    <UserControl.Resources>
+        <conv:BoolToVisibilityConverter x:Key="BoolToVis"/>
+        <conv:BoolToInverseVisibilityConverter x:Key="InvBoolToVis"/>
+        <conv:RoleToAlignmentConverter x:Key="RoleAlign"/>
+        <conv:RoleToBackgroundConverter x:Key="RoleBg"/>
+        <conv:RoleToForegroundConverter x:Key="RoleFg"/>
+    </UserControl.Resources>
+
+    <!-- Card Principal del Chat (Blanca con bordes redondeados y sombra elegante) -->
+    <Border Background="{DynamicResource SurfaceBrush}" CornerRadius="22" Padding="24,20">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/> <!-- Header & Status -->
+                <RowDefinition Height="*"/>    <!-- Messages Area -->
+                <RowDefinition Height="Auto"/> <!-- Quick Action Chips -->
+                <RowDefinition Height="Auto"/> <!-- Input Box -->
+            </Grid.RowDefinitions>
+
+            <!-- 1. Header con Status de Ollama -->
+            <Grid Grid.Row="0" Margin="0,0,0,16">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <Border Width="40" Height="40" CornerRadius="20" Background="{DynamicResource PrimaryBrush}" Margin="0,0,12,0">
+                        <fa:IconImage Icon="Robot" Width="20" Height="20" Foreground="{DynamicResource AccentBrush}"
+                                      HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock Text="Asistente de Productividad DoItNow" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                        <TextBlock Text="{Binding StatusText}" FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,2,0,0"/>
+                    </StackPanel>
+                </StackPanel>
+
+                <!-- Acciones superiores -->
+                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Button Command="{Binding CheckOllamaStatusCommand}"
+                            Background="{DynamicResource SurfaceMutedBrush}" BorderThickness="0" Cursor="Hand" Margin="0,0,8,0">
+                        <Border CornerRadius="12" Padding="12,6">
+                            <StackPanel Orientation="Horizontal">
+                                <fa:IconImage Icon="SyncAlt" Width="12" Height="12" Foreground="{DynamicResource TextOnMutedBrush}" Margin="0,0,6,0"/>
+                                <TextBlock Text="Reconectar" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource TextOnMutedBrush}"/>
+                            </StackPanel>
+                        </Border>
+                    </Button>
+                    <Button Command="{Binding ClearChatCommand}"
+                            Background="{DynamicResource SurfaceMutedBrush}" BorderThickness="0" Cursor="Hand">
+                        <Border CornerRadius="12" Padding="12,6">
+                            <StackPanel Orientation="Horizontal">
+                                <fa:IconImage Icon="Trash" Width="12" Height="12" Foreground="{DynamicResource TextMutedBrush}" Margin="0,0,6,0"/>
+                                <TextBlock Text="Limpiar" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource TextMutedBrush}"/>
+                            </StackPanel>
+                        </Border>
+                    </Button>
+                </StackPanel>
+            </Grid>
+
+            <!-- 2. Área de Mensajes (Scrollable) -->
+            <Border Grid.Row="1" Background="{DynamicResource SurfaceAltBrush}" CornerRadius="16" Padding="16" Margin="0,0,0,12">
+                <ScrollViewer x:Name="ChatScrollViewer" VerticalScrollBarVisibility="Auto">
+                    <ItemsControl ItemsSource="{Binding Messages}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Grid Margin="0,6" HorizontalAlignment="{Binding Role, Converter={StaticResource RoleAlign}}">
+                                    <Border CornerRadius="16" Padding="14,10" MaxWidth="620"
+                                            Background="{Binding Role, Converter={StaticResource RoleBg}}">
+                                        <Border.Effect>
+                                            <DropShadowEffect BlurRadius="8" ShadowDepth="1" Opacity="0.06" Color="{DynamicResource CardShadowColor}"/>
+                                        </Border.Effect>
+                                        <StackPanel>
+                                            <TextBlock Text="{Binding Content}" FontSize="13" TextWrapping="Wrap"
+                                                       FontFamily="Segoe UI" LineHeight="19"
+                                                       Foreground="{Binding Role, Converter={StaticResource RoleFg}}"/>
+                                            <TextBlock Text="{Binding Timestamp, StringFormat='{}{0:HH:mm}'}" FontSize="9"
+                                                       Foreground="{Binding Role, Converter={StaticResource RoleFg}}"
+                                                       Opacity="0.6" HorizontalAlignment="Right" Margin="0,4,0,0"/>
+                                        </StackPanel>
+                                    </Border>
+                                </Grid>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+            </Border>
+
+            <!-- 3. Quick Prompt Chips -->
+            <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,0,0,12">
+                <TextBlock Text="Sugerencias rápidas:" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource TextMutedBrush}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                <Button Command="{Binding SendQuickPromptCommand}" CommandParameter="¿Cómo puedo estructurar mis tareas de hoy para ser más eficiente?"
+                        Background="Transparent" BorderThickness="0" Cursor="Hand" Margin="0,0,6,0">
+                    <Border Background="{DynamicResource ChipBrush}" CornerRadius="12" Padding="10,5">
+                        <TextBlock Text="🗓️ Planificar hoy" FontSize="11" Foreground="{DynamicResource TextStrongBrush}"/>
+                    </Border>
+                </Button>
+                <Button Command="{Binding SendQuickPromptCommand}" CommandParameter="Revisa las prioridades recomendadas para mis pendientes."
+                        Background="Transparent" BorderThickness="0" Cursor="Hand" Margin="0,0,6,0">
+                    <Border Background="{DynamicResource AccentBrush}" CornerRadius="12" Padding="10,5">
+                        <TextBlock Text="⚡ Priorizar" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource AccentInkDeepBrush}"/>
+                    </Border>
+                </Button>
+                <Button Command="{Binding SendQuickPromptCommand}" CommandParameter="Dame un consejo rápido de productividad técnica."
+                        Background="Transparent" BorderThickness="0" Cursor="Hand">
+                    <Border Background="{DynamicResource ChipBrush}" CornerRadius="12" Padding="10,5">
+                        <TextBlock Text="💡 Tip del día" FontSize="11" Foreground="{DynamicResource TextStrongBrush}"/>
+                    </Border>
+                </Button>
+            </StackPanel>
+
+            <!-- 4. Caja de Entrada de Mensaje -->
+            <Grid Grid.Row="3">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <TextBox Text="{Binding InputMessage, UpdateSourceTrigger=PropertyChanged}"
+                         Background="{DynamicResource SurfaceInputBrush}" BorderBrush="{DynamicResource BorderSoftBrush}" BorderThickness="1"
+                         FontSize="13" Padding="16,12" VerticalContentAlignment="Center"
+                         FontFamily="Segoe UI"
+                         KeyDown="MessageInput_KeyDown"
+                         Margin="0,0,10,0">
+                    <TextBox.Resources>
+                        <Style TargetType="Border">
+                            <Setter Property="CornerRadius" Value="16"/>
+                        </Style>
+                    </TextBox.Resources>
+                </TextBox>
+
+                <Button Grid.Column="1" Command="{Binding SendMessageCommand}"
+                        Background="{DynamicResource PrimaryBrush}" BorderThickness="0" Cursor="Hand" Height="44" Padding="20,0">
+                    <Button.Resources>
+                        <Style TargetType="Border">
+                            <Setter Property="CornerRadius" Value="16"/>
+                        </Style>
+                    </Button.Resources>
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <TextBlock Text="Enviar" FontSize="13" FontWeight="Bold" Foreground="White" Margin="0,0,8,0"
+                                   Visibility="{Binding IsGenerating, Converter={StaticResource InvBoolToVis}}"/>
+                        <TextBlock Text="Pensando..." FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource AccentBrush}" Margin="0,0,8,0"
+                                   Visibility="{Binding IsGenerating, Converter={StaticResource BoolToVis}}"/>
+                        <fa:IconImage Icon="PaperPlane" Width="14" Height="14" Foreground="{DynamicResource AccentBrush}"/>
+                    </StackPanel>
+                </Button>
+            </Grid>
+        </Grid>
+    </Border>
+</UserControl>

@@ -1,0 +1,132 @@
+<UserControl x:Class="DoItNow.Views.DocToolsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:fa="http://schemas.awesome.incremented/wpf/xaml/fontawesome.sharp"
+             xmlns:conv="clr-namespace:DoItNow.Converters"
+             mc:Ignorable="d" 
+             d:DesignHeight="600" d:DesignWidth="900">
+
+    <UserControl.Resources>
+        <conv:BoolToVisibilityConverter x:Key="BoolToVis"/>
+        <conv:BoolToInverseVisibilityConverter x:Key="InvBoolToVis"/>
+    </UserControl.Resources>
+
+    <Border Background="{DynamicResource SurfaceBrush}" CornerRadius="22" Padding="28,24">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/> <!-- Header -->
+                <RowDefinition Height="Auto"/> <!-- Drop Area / File Selector -->
+                <RowDefinition Height="*"/>    <!-- Text Preview Area -->
+                <RowDefinition Height="Auto"/> <!-- AI Action Bar & Status -->
+            </Grid.RowDefinitions>
+
+            <!-- 1. Header -->
+            <Grid Grid.Row="0" Margin="0,0,0,18">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <StackPanel VerticalAlignment="Center">
+                    <StackPanel Orientation="Horizontal">
+                        <fa:IconImage Icon="FileAlt" Width="20" Height="20" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,10,0"/>
+                        <TextBlock Text="Doc &amp; File Tools — Extractor Inteligente con IA" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                    </StackPanel>
+                    <TextBlock Text="Carga un documento, resumen o apunte para que Ollama extraiga automáticamente tareas accionables."
+                               FontSize="12" Foreground="{DynamicResource TextSecondaryBrush}" Margin="30,4,0,0"/>
+                </StackPanel>
+
+                <Button Grid.Column="1" Command="{Binding ClearCommand}"
+                        Background="{DynamicResource SurfaceMutedBrush}" BorderThickness="0" Cursor="Hand" Padding="14,6">
+                    <Button.Resources>
+                        <Style TargetType="Border"><Setter Property="CornerRadius" Value="12"/></Style>
+                    </Button.Resources>
+                    <TextBlock Text="Limpiar" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource TextMutedBrush}"/>
+                </Button>
+            </Grid>
+
+            <!-- 2. Drop / File Selector Box -->
+            <Border Grid.Row="1" Background="{DynamicResource SurfaceAltBrush}" BorderBrush="{DynamicResource BorderMediumBrush}" BorderThickness="1.5"
+                    CornerRadius="16" Padding="20,16" Margin="0,0,0,16"
+                    AllowDrop="True" Drop="FileDrop_Drop" DragOver="FileDrop_DragOver">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel VerticalAlignment="Center">
+                        <StackPanel Orientation="Horizontal">
+                            <fa:IconImage Icon="FileLines" Width="18" Height="18" Foreground="{DynamicResource TextMutedBrush}" Margin="0,0,8,0"/>
+                            <TextBlock Text="{Binding FileName}" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                        </StackPanel>
+                        <TextBlock Text="{Binding SelectedFilePath, FallbackValue='Arrastra un archivo aquí o haz clic en Seleccionar...'}"
+                                   FontSize="11" Foreground="{DynamicResource TextMutedBrush}" Margin="26,2,0,0" TextTrimming="CharacterEllipsis"/>
+                    </StackPanel>
+
+                    <Button Grid.Column="1" Command="{Binding SelectFileCommand}"
+                            Background="{DynamicResource PrimaryBrush}" BorderThickness="0" Cursor="Hand" Padding="18,10">
+                        <Button.Resources>
+                            <Style TargetType="Border"><Setter Property="CornerRadius" Value="14"/></Style>
+                        </Button.Resources>
+                        <StackPanel Orientation="Horizontal">
+                            <fa:IconImage Icon="FolderOpen" Width="14" Height="14" Foreground="{DynamicResource AccentBrush}" Margin="0,0,8,0"/>
+                            <TextBlock Text="Seleccionar Archivo" FontSize="12" FontWeight="Bold" Foreground="White"/>
+                        </StackPanel>
+                    </Button>
+                </Grid>
+            </Border>
+
+            <!-- 3. Text Preview Area -->
+            <Grid Grid.Row="2" Margin="0,0,0,16">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <Grid Grid.Row="0" Margin="0,0,0,8">
+                    <TextBlock Text="VISTA PREVIA DEL CONTENIDO" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource TextMutedBrush}"/>
+                    <TextBlock Text="{Binding WordCount, StringFormat='{}{0} palabras'}" FontSize="10" Foreground="{DynamicResource TextMutedBrush}" HorizontalAlignment="Right"/>
+                </Grid>
+
+                <TextBox Grid.Row="1" Text="{Binding ExtractedText, UpdateSourceTrigger=PropertyChanged}"
+                         AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto"
+                         Background="{DynamicResource SurfaceAltBrush}" BorderBrush="{DynamicResource BorderSoftBrush}" BorderThickness="1"
+                         FontSize="12" FontFamily="Segoe UI" Padding="14">
+                    <TextBox.Resources>
+                        <Style TargetType="Border"><Setter Property="CornerRadius" Value="14"/></Style>
+                    </TextBox.Resources>
+                </TextBox>
+            </Grid>
+
+            <!-- 4. AI Action Bar -->
+            <Border Grid.Row="3" Background="{DynamicResource PrimaryBrush}" CornerRadius="16" Padding="18,14">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Status Message -->
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock Text="{Binding StatusMessage}" FontSize="12" Foreground="White" TextTrimming="CharacterEllipsis"/>
+                    </StackPanel>
+
+                    <!-- Run AI Extraction Button -->
+                    <Button Grid.Column="1" Command="{Binding ExtractTasksWithAiCommand}"
+                            Background="{DynamicResource AccentBrush}" BorderThickness="0" Cursor="Hand" Padding="20,10">
+                        <Button.Resources>
+                            <Style TargetType="Border"><Setter Property="CornerRadius" Value="12"/></Style>
+                        </Button.Resources>
+                        <StackPanel Orientation="Horizontal">
+                            <fa:IconImage Icon="Magic" Width="14" Height="14" Foreground="{DynamicResource AccentInkBrush}" Margin="0,0,8,0"/>
+                            <TextBlock Text="⚡ Extraer Tareas con Ollama" FontSize="12" FontWeight="Bold" Foreground="{DynamicResource AccentInkBrush}"/>
+                        </StackPanel>
+                    </Button>
+                </Grid>
+            </Border>
+        </Grid>
+    </Border>
+</UserControl>

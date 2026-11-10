@@ -1,0 +1,367 @@
+using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
+using DoItNow.Models;
+using DoItNow.Services;
+using System;
+using System.Collections.ObjectModel;
+using System.Globalization;
+using System.Linq;
+using System.Windows.Threading;
+
+namespace DoItNow.ViewModels
+{
+    /// <summary>
+    /// ViewModel raíz — orquesta la navegación general entre todos los módulos:
+    /// Dashboard, Tareas, Calendario, AI Chat (Ollama), Doc Tools y Configuración.
+    /// </summary>
+    public partial class MainViewModel : ObservableObject
+    {
+        private readonly TaskService _taskService;
+        private readonly SettingsService _settingsService;
+        private readonly OllamaService _ollamaService;
+        private readonly ChatService _chatService;
+
+        public DashboardViewModel Dashboard { get; }
+        public TasksViewModel Tasks { get; }
+        public CalendarViewModel Calendar { get; }
+        public NotesViewModel Notes { get; }
+        public VaultViewModel Vault { get; }
+        public AiChatViewModel AiChat { get; }
+        public DocToolsViewModel DocTools { get; }
+        public SettingsViewModel Settings { get; }
+
+        // Alias para compatibilidad de bindings en XAML
+        public DashboardViewModel DashboardVM => Dashboard;
+        public TasksViewModel TasksVM => Tasks;
+        public CalendarViewModel CalendarVM => Calendar;
+        public NotesViewModel NotesVM => Notes;
+        public VaultViewModel VaultVM => Vault;
+        public AiChatViewModel AiChatVM => AiChat;
+        public DocToolsViewModel DocToolsVM => DocTools;
+        public SettingsViewModel SettingsVM => Settings;
+
+        [ObservableProperty] private ObservableObject _currentView;
+        [ObservableProperty] private string _activeSection = "Dashboard";
+        [ObservableProperty] private string _currentTime = string.Empty;
+        [ObservableProperty] private string _currentDate = string.Empty;
+        [ObservableProperty] private string _currentSectionTitle = "Dashboard";
+        [ObservableProperty] private string _activeViewMode = "Daily";
+        [ObservableProperty] private string _formattedSelectedDate = string.Empty;
+        [ObservableProperty] private bool _isDarkTheme;
+        [ObservableProperty] private string _weekRangeLabel = string.Empty;
+
+        public ObservableCollection<WeekDayItem> WeekDays { get; } = new();
+
+        public bool IsLightTheme
+        {
+            get => !IsDarkTheme;
+            set
+            {
+                if (value && IsDarkTheme)
+                    IsDarkTheme = false;
+            }
+        }
+
+        private readonly DispatcherTimer _clockTimer;
+        private bool _themeReady;
+
+        public MainViewModel()
+        {
+            _taskService = new TaskService();
+            _settingsService = new SettingsService();
+            _ollamaService = new OllamaService(_settingsService);
+            _chatService = new ChatService(_ollamaService);
+
+            Dashboard = new DashboardViewModel(_taskService);
+            Tasks     = new TasksViewModel(_taskService);
+            Calendar  = new CalendarViewModel(_taskService);
+            Notes     = new NotesViewModel();
+            Vault     = new VaultViewModel();
+            AiChat    = new AiChatViewModel(_chatService, _ollamaService, _settingsService);
+            DocTools  = new DocToolsViewModel(_taskService, _ollamaService);
+            Settings  = new SettingsViewModel(_settingsService, _ollamaService);
+
+            _currentView = Dashboard;
+
+            // Sincronización de eventos de tareas en tiempo real
+            Tasks.TaskChanged += async () =>
+            {
+                await Dashboard.LoadStatsAsync();
+            };
+
+            // Al cargar datos demo desde Configuración, refrescamos agenda y métricas.
+            Settings.DemoDataLoaded += async () =>
+            {
+                await Tasks.RefreshAsync();
+                await Dashboard.LoadStatsAsync();
+            };
+
+            // El timeline del dashboard muestra el día seleccionado.
+            Tasks.SelectedDateFilter = Calendar.SelectedDate;
+
+            UpdateFormattedSelectedDate();
+            RebuildWeekDays();
+            Calendar.PropertyChanged += (s, e) =>
+            {
+                if (e.PropertyName == nameof(Calendar.SelectedDate))
+                {
+                    UpdateFormattedSelectedDate();
+                    RebuildWeekDays();
+                    Tasks.SelectedDateFilter = Calendar.SelectedDate;
+                }
+            };
+
+            // Inicializar reloj
+            CurrentTime = DateTime.Now.ToString("HH:mm");
+            CurrentDate = DateTime.Now.ToString("dddd, dd MMM", new CultureInfo("es-ES"));
+
+            _clockTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(30) };
+            _clockTimer.Tick += (_, _) =>
+            {
+                CurrentTime = DateTime.Now.ToString("HH:mm");
+                CurrentDate = DateTime.Now.ToString("dddd, dd MMM", new CultureInfo("es-ES"));
+            };
+            _clockTimer.Start();
+
+            // Tema: --theme=dark|light tiene prioridad sobre la preferencia guardada.
+            if (ThemeService.StartupOverride.HasValue)
+            {
+                ApplyThemeSilently(ThemeService.StartupOverride.Value);
+            }
+            else
+            {
+                IsDarkTheme = ThemeService.IsDark;
+                _ = LoadSavedThemeAsync();
+            }
+
+            // Navegación inicial para demos/capturas: --section=tasks|calendar|chat|doctools|settings
+            var sectionArg = Environment.GetCommandLineArgs()
+                .FirstOrDefault(a => a.StartsWith("--section=", StringComparison.OrdinalIgnoreCase));
+
+            if (!string.IsNullOrWhiteSpace(sectionArg))
+            {
+                ApplyStartupSection(sectionArg.Substring("--section=".Length));
+            }
+
+            // Datos de demostración para capturas reproducibles: --demo
+            if (Environment.GetCommandLineArgs()
+                .Any(a => a.Equals("--demo", StringComparison.OrdinalIgnoreCase)))
+            {
+                Settings.LoadDemoDataCommand.Execute(null);
+            }
+        }
+
+        private async System.Threading.Tasks.Task LoadSavedThemeAsync()
+        {
+            try
+            {
+                var saved = await _settingsService.GetSettingAsync(SettingsService.KeyTheme, "Claro");
+                var dark = saved.Trim().Equals("Oscuro", StringComparison.OrdinalIgnoreCase)
+                           || saved.Trim().Equals("Dark", StringComparison.OrdinalIgnoreCase);
+
+                ApplyThemeSilently(dark);
+            }
+            catch
+            {
+                // El tema claro por defecto sigue siendo válido.
+            }
+        }
+
+        private void ApplyThemeSilently(bool dark)
+        {
+            _themeReady = false;
+            IsDarkTheme = dark;
+            OnPropertyChanged(nameof(IsLightTheme));
+            _themeReady = true;
+        }
+
+        partial void OnIsDarkThemeChanged(bool value)
+        {
+            ThemeService.Apply(value);
+            OnPropertyChanged(nameof(IsLightTheme));
+
+            if (!_themeReady) return;
+
+            _ = _settingsService.SetSettingAsync(
+                SettingsService.KeyTheme,
+                value ? "Oscuro" : "Claro",
+                "Tema de la aplicación");
+
+            ToastService.Info(
+                value ? "Modo oscuro activado 🌙" : "Modo claro activado ☀️",
+                "Tema actualizado");
+        }
+
+        private void UpdateFormattedSelectedDate()
+        {
+            FormattedSelectedDate = Calendar.SelectedDate
+                .ToString("dd MMMM yyyy", new CultureInfo("es-ES"));
+        }
+
+        private void RebuildWeekDays()
+        {
+            var selected = Calendar.SelectedDate.Date;
+            var offset = ((int)selected.DayOfWeek + 6) % 7; // lunes = 0
+            var monday = selected.AddDays(-offset);
+
+            WeekDays.Clear();
+            for (var i = 0; i < 7; i++)
+            {
+                var date = monday.AddDays(i);
+                WeekDays.Add(new WeekDayItem
+                {
+                    Date = date,
+                    IsToday = date == DateTime.Today,
+                    IsSelected = date == selected
+                });
+            }
+
+            var sunday = monday.AddDays(6);
+            WeekRangeLabel = $"{monday:dd MMM} — {sunday:dd MMM}";
+        }
+
+        [RelayCommand]
+        public void SelectDate(DateTime date)
+        {
+            Calendar.SelectedDate = date;
+        }
+
+        [RelayCommand]
+        public void ToggleTheme()
+        {
+            IsDarkTheme = !IsDarkTheme;
+        }
+
+        /// <summary>Navega a Tareas y abre el formulario de creación.</summary>
+        [RelayCommand]
+        public void NewTask()
+        {
+            NavigateToTasks();
+            Tasks.ShowAddTaskCommand.Execute(null);
+        }
+
+        private void ApplyStartupSection(string section)
+        {
+            switch (section.Trim().ToLowerInvariant())
+            {
+                case "tasks":
+                case "tareas":
+                    NavigateToTasks();
+                    break;
+                case "calendar":
+                case "calendario":
+                    NavigateToCalendar();
+                    break;
+                case "notes":
+                case "notas":
+                case "code":
+                    NavigateToNotes();
+                    break;
+                case "vault":
+                case "boveda":
+                case "keys":
+                    NavigateToVault();
+                    break;
+                case "chat":
+                case "ai":
+                    NavigateToChat();
+                    break;
+                case "doctools":
+                case "docs":
+                    NavigateToDocTools();
+                    break;
+                case "settings":
+                case "config":
+                    NavigateToSettings();
+                    break;
+                default:
+                    NavigateToDashboard();
+                    break;
+            }
+        }
+
+        [RelayCommand]
+        public void SetViewMode(string mode) => ActiveViewMode = mode;
+
+        [RelayCommand]
+        public void GoToToday() => Calendar.SelectedDate = DateTime.Today;
+
+        [RelayCommand]
+        public void PreviousDay() => Calendar.SelectedDate = Calendar.SelectedDate.AddDays(-1);
+
+        [RelayCommand]
+        public void NextDay() => Calendar.SelectedDate = Calendar.SelectedDate.AddDays(1);
+
+        [RelayCommand]
+        private void NavigateToDashboard()
+        {
+            CurrentView = Dashboard;
+            ActiveSection = "Dashboard";
+            CurrentSectionTitle = "🏠  Dashboard";
+            Tasks.SelectedDateFilter = Calendar.SelectedDate;
+            _ = Dashboard.LoadStatsAsync();
+            _ = Tasks.RefreshAsync();
+        }
+
+        [RelayCommand]
+        private void NavigateToTasks()
+        {
+            CurrentView = Tasks;
+            ActiveSection = "Tasks";
+            CurrentSectionTitle = "✅  Mis tareas";
+            Tasks.SelectedDateFilter = null; // En Mis Tareas se ve todo el backlog
+            _ = Tasks.RefreshAsync();
+        }
+
+        [RelayCommand]
+        private void NavigateToCalendar()
+        {
+            CurrentView = Calendar;
+            ActiveSection = "Calendar";
+            CurrentSectionTitle = "📅  Calendario";
+            _ = Calendar.LoadDayTasksAsync();
+        }
+
+        [RelayCommand]
+        private void NavigateToNotes()
+        {
+            CurrentView = Notes;
+            ActiveSection = "Notes";
+            CurrentSectionTitle = "📝  Notas de código";
+        }
+
+        [RelayCommand]
+        private void NavigateToVault()
+        {
+            CurrentView = Vault;
+            ActiveSection = "Vault";
+            CurrentSectionTitle = "🔐  Bóveda de claves";
+        }
+
+        [RelayCommand]
+        private void NavigateToChat()
+        {
+            CurrentView = AiChat;
+            ActiveSection = "Chat";
+            CurrentSectionTitle = "🤖  Asistente IA (Ollama)";
+            _ = AiChat.CheckOllamaStatusAsync();
+        }
+
+        [RelayCommand]
+        private void NavigateToDocTools()
+        {
+            CurrentView = DocTools;
+            ActiveSection = "DocTools";
+            CurrentSectionTitle = "⚡  Doc & PDF Tools";
+        }
+
+        [RelayCommand]
+        private void NavigateToSettings()
+        {
+            CurrentView = Settings;
+            ActiveSection = "Settings";
+            CurrentSectionTitle = "⚙️  Configuración";
+            _ = Settings.LoadSettingsAsync();
+        }
+    }
+}

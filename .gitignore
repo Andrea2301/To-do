@@ -1,0 +1,67 @@
+## .NET / C# / WPF
+bin/
+obj/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+*.dll
+*.pdb
+*.exe
+
+## Visual Studio
+.vs/
+*.csproj.user
+_ReSharper*/
+*.[Rr]e[Ss]harper
+*.DotSettings.user
+
+## NuGet
+**/packages/
+*.nupkg
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+## User-specific data
+*.rsuser
+*.sln.iml
+
+## Build results
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+[Ww][Ii][Nn]32/
+
+## SQLite Database (NUNCA subir la BD del usuario)
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+
+## Local secrets / runtime config (nunca subir claves reales)
+DoItNow/appsettings.json
+appsettings.json
+app_error.txt
+*.ditvault
+
+## Design references used locally (not part of the app)
+ref/
+
+## OS Files
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+.DS_Store
+
+## Rider / JetBrains
+.idea/
+*.sln.iml
+
+## Temporary files
+*.tmp
+*.temp
+*.log
+*.cache

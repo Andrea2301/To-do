@@ -1,0 +1,1414 @@
+<Window x:Class="DoItNow.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:fa="http://schemas.awesome.incremented/wpf/xaml/fontawesome.sharp"
+        xmlns:vm="clr-namespace:DoItNow.ViewModels"
+        xmlns:conv="clr-namespace:DoItNow.Converters"
+        xmlns:views="clr-namespace:DoItNow.Views"
+        Title="DoItNow - TimeFrame" Height="780" Width="1280"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        Background="{x:Null}"
+        WindowStartupLocation="CenterScreen"
+        MouseLeftButtonDown="Window_MouseLeftButtonDown">
+
+    <Window.Resources>
+        <!-- Converters -->
+        <conv:BoolToInverseVisibilityConverter x:Key="InvBoolToVis"/>
+        <conv:BoolToVisibilityConverter x:Key="BoolToVis"/>
+        <conv:PriorityToColorConverter x:Key="PriorityColor"/>
+        <conv:CategoryToIconConverter x:Key="CatIcon"/>
+        <conv:CategoryToLabelConverter x:Key="CatLabel"/>
+        <conv:BoolToStrikethroughConverter x:Key="Strikethrough"/>
+        <conv:BoolToOpacityConverter x:Key="CompletedOpacity"/>
+        <conv:PriorityToLabelConverter x:Key="PriorityLabel"/>
+        <conv:StringEqualsToBoolConverter x:Key="StrEqBool"/>
+        <conv:IntToVisibilityConverter x:Key="IntToVis"/>
+        <conv:StringNotEmptyToVisibilityConverter x:Key="StringNotEmptyToVis"/>
+        <conv:PriorityToCardBrushConverter x:Key="PriorityCardBrush"/>
+        <conv:PriorityToCardForegroundConverter x:Key="PriorityCardFg"/>
+        <conv:StringEqualsToVisibilityConverter x:Key="StrEqVis"/>
+        <conv:StringInListToVisibilityConverter x:Key="StrInListVis"/>
+        <conv:StringEqualsToBrushConverter x:Key="StrEqBrush"/>
+
+        <!-- Pill Nav Button Style -->
+        <Style x:Key="RailCircleButton" TargetType="Button">
+            <Setter Property="Width" Value="38"/>
+            <Setter Property="Height" Value="38"/>
+            <Setter Property="Margin" Value="0,4,0,4"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="bd" CornerRadius="19" Background="{TemplateBinding Background}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="bd" Property="Background" Value="{DynamicResource RailHoverBrush}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Dark Pill Button Style -->
+        <Style x:Key="DarkPillButton" TargetType="Button">
+            <Setter Property="Background" Value="{DynamicResource PrimaryBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextOnDarkBrush}"/>
+            <Setter Property="FontFamily" Value="Segoe UI"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Padding" Value="16,8"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="bd" CornerRadius="17" Background="{TemplateBinding Background}"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="bd" Property="Background" Value="{DynamicResource PrimaryHoverBrush}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Small Icon Button -->
+        <Style x:Key="SmallCircleButton" TargetType="Button">
+            <Setter Property="Width" Value="28"/>
+            <Setter Property="Height" Value="28"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Background" Value="{DynamicResource RailHoverBrush}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="bd" CornerRadius="14" Background="{TemplateBinding Background}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="bd" Property="Background" Value="{DynamicResource PrimaryBrush}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Form Input Styles -->
+        <Style x:Key="CleanTextBox" TargetType="TextBox">
+            <Setter Property="Background" Value="{DynamicResource SurfaceInputBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
+            <Setter Property="CaretBrush" Value="{DynamicResource TextPrimaryBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderSoftBrush}"/>
+            <Setter Property="FontFamily" Value="Segoe UI"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Padding" Value="10,6"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TextBox">
+                        <Border CornerRadius="10" Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}">
+                            <ScrollViewer x:Name="PART_ContentHost" Margin="{TemplateBinding Padding}"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- CleanComboBox y estilos de ComboBox viven en Styles/ButtonStyle.xaml -->
+
+        <!-- ============================================================
+             Animaciones y micro-interacciones
+             ============================================================ -->
+
+        <!-- Entrada suave de cada sección al navegar -->
+        <Style x:Key="SectionTransition" TargetType="Grid">
+            <Setter Property="Opacity" Value="0"/>
+            <Setter Property="RenderTransform">
+                <Setter.Value>
+                    <TranslateTransform Y="14"/>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding Visibility, RelativeSource={RelativeSource Self}}" Value="Visible">
+                    <DataTrigger.EnterActions>
+                        <BeginStoryboard>
+                            <Storyboard>
+                                <DoubleAnimation Storyboard.TargetProperty="Opacity" To="1" Duration="0:0:0.30">
+                                    <DoubleAnimation.EasingFunction>
+                                        <CubicEase EasingMode="EaseOut"/>
+                                    </DoubleAnimation.EasingFunction>
+                                </DoubleAnimation>
+                                <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)"
+                                                 To="0" Duration="0:0:0.35">
+                                    <DoubleAnimation.EasingFunction>
+                                        <CubicEase EasingMode="EaseOut"/>
+                                    </DoubleAnimation.EasingFunction>
+                                </DoubleAnimation>
+                            </Storyboard>
+                        </BeginStoryboard>
+                    </DataTrigger.EnterActions>
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- Tarjetas: fade-in al cargar + elevación al pasar el mouse -->
+        <Style x:Key="HoverLiftCard" TargetType="Border">
+            <Setter Property="RenderTransformOrigin" Value="0.5,0.5"/>
+            <Setter Property="RenderTransform">
+                <Setter.Value>
+                    <ScaleTransform ScaleX="1" ScaleY="1"/>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Trigger.EnterActions>
+                        <BeginStoryboard>
+                            <Storyboard>
+                                <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)"
+                                                 To="1.025" Duration="0:0:0.12"/>
+                                <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)"
+                                                 To="1.025" Duration="0:0:0.12"/>
+                            </Storyboard>
+                        </BeginStoryboard>
+                    </Trigger.EnterActions>
+                    <Trigger.ExitActions>
+                        <BeginStoryboard>
+                            <Storyboard>
+                                <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)"
+                                                 To="1" Duration="0:0:0.16"/>
+                                <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)"
+                                                 To="1" Duration="0:0:0.16"/>
+                            </Storyboard>
+                        </BeginStoryboard>
+                    </Trigger.ExitActions>
+                </Trigger>
+                <EventTrigger RoutedEvent="FrameworkElement.Loaded">
+                    <BeginStoryboard>
+                        <Storyboard>
+                            <DoubleAnimation Storyboard.TargetProperty="Opacity" From="0" To="1" Duration="0:0:0.25"/>
+                        </Storyboard>
+                    </BeginStoryboard>
+                </EventTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- Segmento del selector de tema -->
+        <Style x:Key="ThemeSegment" TargetType="RadioButton">
+            <Setter Property="Foreground" Value="{DynamicResource HeaderSubtleBrush}"/>
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Padding" Value="10,3"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="RadioButton">
+                        <Border x:Name="bd" Background="Transparent" CornerRadius="13"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="bd" Property="Background" Value="{DynamicResource PrimaryHoverBrush}"/>
+                            </Trigger>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="bd" Property="Background" Value="{DynamicResource AccentBrush}"/>
+                                <Setter Property="Foreground" Value="{DynamicResource AccentInkBrush}"/>
+                                <Setter Property="FontWeight" Value="Bold"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Tira de días de la semana -->
+        <Style x:Key="DayChipBorder" TargetType="Border">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="CornerRadius" Value="14"/>
+            <Setter Property="Padding" Value="6,6"/>
+            <Setter Property="Margin" Value="3,0"/>
+            <Setter Property="BorderThickness" Value="1.5"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding IsToday}" Value="True">
+                    <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                    <Setter Property="Background" Value="{DynamicResource AccentBrush}"/>
+                    <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="DayNumberText" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                    <Setter Property="Foreground" Value="{DynamicResource AccentInkBrush}"/>
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="DayNameText" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="9"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}"/>
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                    <Setter Property="Foreground" Value="{DynamicResource AccentInkBrush}"/>
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- Barra de progreso lima -->
+        <Style x:Key="LimeProgressBar" TargetType="ProgressBar">
+            <Setter Property="Height" Value="6"/>
+            <Setter Property="Foreground" Value="{DynamicResource AccentBrush}"/>
+            <Setter Property="Background" Value="{DynamicResource SurfaceMutedBrush}"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ProgressBar">
+                        <Grid>
+                            <Border Background="{TemplateBinding Background}" CornerRadius="3"/>
+                            <Border x:Name="PART_Indicator" Background="{TemplateBinding Foreground}"
+                                    CornerRadius="3" HorizontalAlignment="Left"/>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+
+    <!-- ========== VENTANA PRINCIPAL (ESTILO TIMEFRAME CLONE) ========== -->
+    <Border x:Name="MainBorder" Background="{DynamicResource AppBackgroundBrush}" CornerRadius="26" Padding="16,14,18,16">
+        <Border.Effect>
+            <DropShadowEffect BlurRadius="28" ShadowDepth="4" Opacity="0.32" Color="{DynamicResource WindowShadowColor}"/>
+        </Border.Effect>
+
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="46"/>   <!-- TOP HEADER BAR -->
+                <RowDefinition Height="*"/>    <!-- MAIN APP BODY -->
+            </Grid.RowDefinitions>
+
+            <!-- ======================================================== -->
+            <!-- 1. TOP HEADER BAR                                        -->
+            <!-- ======================================================== -->
+            <Grid Grid.Row="0" Margin="0,0,0,10" Background="Transparent" MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="260"/>  <!-- Logo & Name -->
+                    <ColumnDefinition Width="*"/>    <!-- Center View Pills -->
+                    <ColumnDefinition Width="Auto"/> <!-- Dark/Light, Avatar & Controls -->
+                </Grid.ColumnDefinitions>
+
+                <!-- Left: Spiral Brand Mark + "TimeFrame" / "DoItNow" -->
+                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                    <!-- Concentric Circles Brand Logo -->
+                    <Grid Width="30" Height="30" Margin="4,0,12,0">
+                        <Ellipse Width="30" Height="30" Stroke="White" StrokeThickness="2" Opacity="0.9"/>
+                        <Ellipse Width="18" Height="18" Stroke="White" StrokeThickness="1.5" Opacity="0.7"/>
+                        <Ellipse Width="8" Height="8" Fill="White"/>
+                    </Grid>
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock Text="DoItNow" FontSize="14" FontWeight="Bold" Foreground="White"
+                                   FontFamily="Segoe UI" VerticalAlignment="Center"/>
+                        <TextBlock Text="PRODUCTIVITY OS" FontSize="8" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource HeaderSubtleBrush}" Margin="0,1,0,0"
+                                   FontFamily="Segoe UI"/>
+                    </StackPanel>
+                    <Border Background="{DynamicResource PrimaryBrush}" CornerRadius="10"
+                            Padding="9,4" Margin="14,0,0,0" VerticalAlignment="Center">
+                        <TextBlock Text="{Binding CurrentSectionTitle}" FontSize="11" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource AccentBrush}" FontFamily="Segoe UI"/>
+                    </Border>
+                </StackPanel>
+
+              
+
+                <!-- Right: Dark/Light Pill, Bell, Avatar, Window Controls -->
+                <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                    <!-- Dark / Light Theme Toggle -->
+                    <Border Background="{DynamicResource PrimaryBrush}" CornerRadius="16" Height="32"
+                            Padding="3" Margin="0,0,12,0" ToolTip="Cambiar entre tema claro y oscuro">
+                        <StackPanel Orientation="Horizontal">
+                            <RadioButton GroupName="ThemeSegment" Style="{StaticResource ThemeSegment}"
+                                         Content="🌙 Dark" IsChecked="{Binding IsDarkTheme, Mode=TwoWay}"/>
+                            <RadioButton GroupName="ThemeSegment" Style="{StaticResource ThemeSegment}"
+                                         Content="☀️ Light" IsChecked="{Binding IsLightTheme, Mode=TwoWay}"/>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Notification Bell -->
+                    <Border Width="32" Height="32" CornerRadius="16" Background="{DynamicResource BellBrush}"
+                            Margin="0,0,10,0" Cursor="Hand" ToolTip="Notificaciones"
+                            MouseLeftButtonUp="BellButton_Click">
+                        <TextBlock Text="🔔" FontSize="12" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+
+                    <!-- User Avatar -->
+                    <Border Width="32" Height="32" CornerRadius="16" Background="#FFDAA5"
+                            Margin="0,0,16,0" Cursor="Hand" ToolTip="Perfil y configuración"
+                            MouseLeftButtonUp="AvatarButton_Click">
+                        <TextBlock Text="👨‍💼" FontSize="16" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+
+                    <!-- Window Controls (Minimize, Maximize & Close) -->
+                    <Button Click="MinimizeButton_Click" Style="{StaticResource SmallCircleButton}"
+                            ToolTip="Minimizar" Margin="0,0,6,0">
+                        <TextBlock Text="—" FontSize="11" FontWeight="Bold" Foreground="White"/>
+                    </Button>
+                    <Button x:Name="MaximizeBtn" Click="MaximizeButton_Click" Style="{StaticResource SmallCircleButton}"
+                            ToolTip="Maximizar / Restaurar" Margin="0,0,6,0">
+                        <TextBlock x:Name="MaximizeIcon" Text="◻" FontSize="11" FontWeight="Bold" Foreground="White"/>
+                    </Button>
+                    <Button Click="CloseButton_Click" Style="{StaticResource SmallCircleButton}"
+                            ToolTip="Cerrar">
+                        <TextBlock Text="✕" FontSize="10" FontWeight="Bold" Foreground="White"/>
+                    </Button>
+                </StackPanel>
+            </Grid>
+
+            <!-- ======================================================== -->
+            <!-- 2. MAIN APP BODY                                         -->
+            <!-- ======================================================== -->
+            <Grid Grid.Row="1">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="54"/>   <!-- Slim Left Rail -->
+                    <ColumnDefinition Width="*"/>    <!-- Main View Switcher Container -->
+                </Grid.ColumnDefinitions>
+
+                <!-- ======================================================== -->
+                <!-- SLIM LEFT RAIL (Sidebar Icons)                          -->
+                <!-- ======================================================== -->
+                <Grid Grid.Column="0" Margin="0,4,8,0">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Top Rail Nav Buttons -->
+                    <StackPanel Grid.Row="0">
+                        <!-- 1. Home / Dashboard -->
+                        <Button Style="{StaticResource RailCircleButton}"
+                                Background="{Binding ActiveSection, Converter={StaticResource StrEqBrush}, ConverterParameter='Dashboard'}"
+                                Command="{Binding NavigateToDashboardCommand}" ToolTip="Dashboard">
+                            <fa:IconImage Icon="Home" Width="17" Height="17" Foreground="White"/>
+                        </Button>
+
+                        <!-- 2. Tasks List -->
+                        <Button Style="{StaticResource RailCircleButton}"
+                                Background="{Binding ActiveSection, Converter={StaticResource StrEqBrush}, ConverterParameter='Tasks'}"
+                                Command="{Binding NavigateToTasksCommand}" ToolTip="Mis Tareas">
+                            <fa:IconImage Icon="ListCheck" Width="17" Height="17" Foreground="{DynamicResource RailIconBrush}"/>
+                        </Button>
+
+                        <!-- 3. Calendar View -->
+                        <Button Style="{StaticResource RailCircleButton}"
+                                Background="{Binding ActiveSection, Converter={StaticResource StrEqBrush}, ConverterParameter='Calendar'}"
+                                Command="{Binding NavigateToCalendarCommand}" ToolTip="Calendario">
+                            <fa:IconImage Icon="CalendarDays" Width="17" Height="17" Foreground="{DynamicResource RailIconBrush}"/>
+                        </Button>
+
+                        <!-- 4. Notas de código -->
+                        <Button Style="{StaticResource RailCircleButton}"
+                                Background="{Binding ActiveSection, Converter={StaticResource StrEqBrush}, ConverterParameter='Notes'}"
+                                Command="{Binding NavigateToNotesCommand}" ToolTip="Notas de código">
+                            <fa:IconImage Icon="Code" Width="17" Height="17" Foreground="{DynamicResource RailIconBrush}"/>
+                        </Button>
+
+                        <!-- 5. Bóveda de claves -->
+                        <Button Style="{StaticResource RailCircleButton}"
+                                Background="{Binding ActiveSection, Converter={StaticResource StrEqBrush}, ConverterParameter='Vault'}"
+                                Command="{Binding NavigateToVaultCommand}" ToolTip="Bóveda de claves">
+                            <fa:IconImage Icon="Key" Width="17" Height="17" Foreground="{DynamicResource AccentBrush}"/>
+                        </Button>
+
+                        <!-- 6. AI Chat (Ollama) -->
+                        <Button Style="{StaticResource RailCircleButton}"
+                                Background="{Binding ActiveSection, Converter={StaticResource StrEqBrush}, ConverterParameter='Chat'}"
+                                Command="{Binding NavigateToChatCommand}" ToolTip="Asistente IA (Ollama)">
+                            <fa:IconImage Icon="Robot" Width="17" Height="17" Foreground="{DynamicResource AccentBrush}"/>
+                        </Button>
+
+                        <!-- 7. Doc & PDF Tools -->
+                        <Button Style="{StaticResource RailCircleButton}"
+                                Background="{Binding ActiveSection, Converter={StaticResource StrEqBrush}, ConverterParameter='DocTools'}"
+                                Command="{Binding NavigateToDocToolsCommand}" ToolTip="Doc &amp; File Tools">
+                            <fa:IconImage Icon="FileAlt" Width="17" Height="17" Foreground="{DynamicResource RailIconBrush}"/>
+                        </Button>
+
+                        <!-- 8. Settings -->
+                        <Button Style="{StaticResource RailCircleButton}"
+                                Background="{Binding ActiveSection, Converter={StaticResource StrEqBrush}, ConverterParameter='Settings'}"
+                                Command="{Binding NavigateToSettingsCommand}" ToolTip="Configuración">
+                            <fa:IconImage Icon="Cog" Width="17" Height="17" Foreground="{DynamicResource RailIconBrush}"/>
+                        </Button>
+                    </StackPanel>
+
+                    <!-- Bottom: Logout / Exit button -->
+                    <Button Grid.Row="2" Style="{StaticResource RailCircleButton}"
+                            Click="CloseButton_Click" ToolTip="Salir" VerticalAlignment="Bottom">
+                        <fa:IconImage Icon="SignOutAlt" Width="17" Height="17" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                    </Button>
+                </Grid>
+
+                <!-- ======================================================== -->
+                <!-- CONTENT CONTAINER (SWITCHES BETWEEN ACTIVE VIEWS)       -->
+                <!-- ======================================================== -->
+                <Grid Grid.Column="1">
+                    <!-- 1. DASHBOARD OVERVIEW & TIMELINE VIEW -->
+                    <Grid Style="{StaticResource SectionTransition}"
+                          Visibility="{Binding ActiveSection, Converter={StaticResource StrEqVis}, ConverterParameter='Dashboard'}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="320"/>  <!-- Left Column (Calendar & Checklists) -->
+                            <ColumnDefinition Width="*"/>    <!-- Right Column (Stats & Timeline Schedule) -->
+                        </Grid.ColumnDefinitions>
+
+                <!-- ======================================================== -->
+                <!-- LEFT CONTENT COLUMN (My Calendar + Checklists)           -->
+                <!-- ======================================================== -->
+                <Grid Grid.Column="0" Margin="4,0,12,0">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/> <!-- Title "My Calendar" -->
+                        <RowDefinition Height="Auto"/> <!-- Mini Calendar Card -->
+                        <RowDefinition Height="*"/>    <!-- Checklist Cards -->
+                    </Grid.RowDefinitions>
+
+                    <!-- Title Header -->
+                    <StackPanel Grid.Row="0" Margin="4,0,0,10">
+                        <TextBlock Text="{Binding Dashboard.Greeting}" FontSize="22" FontWeight="Bold" Foreground="White"
+                                   FontFamily="Segoe UI"/>
+                        <TextBlock Text="{Binding Dashboard.MotivationText}" FontSize="11"
+                                   Foreground="{DynamicResource HeaderTextBrush}" FontFamily="Segoe UI"
+                                   Margin="0,2,0,0" TextWrapping="Wrap"/>
+                    </StackPanel>
+
+                    <!-- Mini Calendar Card (TimeFrame Reference Style) -->
+                    <Border Grid.Row="1" Background="{DynamicResource CalendarPanelBrush}" CornerRadius="18" Padding="12,10" Margin="0,0,0,12">
+                        <Calendar Style="{StaticResource calendarStyle}"
+                                  SelectedDate="{Binding Calendar.SelectedDate, Mode=TwoWay}"
+                                  HorizontalAlignment="Center"/>
+                    </Border>
+
+                    <!-- Checklist Cards Container (Scrollable) -->
+                    <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto">
+                        <StackPanel>
+                            <!-- Card 1: Agenda del día -->
+                            <Border Background="{DynamicResource SurfaceBrush}" CornerRadius="18" Padding="14,12" Margin="0,0,0,10">
+                                <StackPanel>
+                                    <!-- Card Header -->
+                                    <Grid Margin="0,0,0,10">
+                                        <TextBlock Text="Agenda del día" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                        <Border HorizontalAlignment="Right" Background="{DynamicResource SurfaceMutedBrush}" CornerRadius="10" Padding="8,3">
+                                            <TextBlock Text="{Binding Tasks.FilteredTasks.Count, StringFormat='{}{0} tareas'}"
+                                                       FontSize="10" FontWeight="SemiBold" Foreground="{DynamicResource TextMutedStrongBrush}"/>
+                                        </Border>
+                                    </Grid>
+
+                                    <!-- Checklist Items -->
+                                    <ItemsControl ItemsSource="{Binding Tasks.FilteredTasks}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Grid Margin="0,4">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                        <ColumnDefinition Width="*"/>
+                                                    </Grid.ColumnDefinitions>
+
+                                                    <!-- Circular Checkbox Pill -->
+                                                    <Button Grid.Column="0"
+                                                            Command="{Binding DataContext.Tasks.ToggleCompleteCommand,
+                                                                RelativeSource={RelativeSource AncestorType=Window}}"
+                                                            CommandParameter="{Binding}"
+                                                            Background="Transparent" BorderThickness="0" Cursor="Hand" Margin="0,0,8,0">
+                                                        <Border Width="18" Height="18" CornerRadius="9"
+                                                                BorderBrush="{DynamicResource CheckboxBorderBrush}" BorderThickness="1.5"
+                                                                Background="{Binding IsCompleted, Converter={StaticResource PriorityCardBrush}}">
+                                                            <TextBlock Text="✓" FontSize="10" FontWeight="Bold"
+                                                                       Foreground="{Binding Priority, Converter={StaticResource PriorityCardFg}}" HorizontalAlignment="Center"
+                                                                       VerticalAlignment="Center"
+                                                                       Visibility="{Binding IsCompleted, Converter={StaticResource BoolToVis}}"/>
+                                                        </Border>
+                                                    </Button>
+
+                                                    <!-- Task Title with Strikethrough when done -->
+                                                    <TextBlock Grid.Column="1" Text="{Binding Title}"
+                                                               FontSize="12" FontFamily="Segoe UI"
+                                                               Foreground="{DynamicResource TextPrimaryBrush}"
+                                                               Opacity="{Binding IsCompleted, Converter={StaticResource CompletedOpacity}}"
+                                                               TextDecorations="{Binding IsCompleted, Converter={StaticResource Strikethrough}}"
+                                                               VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                                                </Grid>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+
+                                    <!-- Empty state -->
+                                    <StackPanel Visibility="{Binding Tasks.HasFilteredTasks, Converter={StaticResource InvBoolToVis}}"
+                                                Margin="0,8,0,2">
+                                        <TextBlock Text="Sin tareas para este día" FontSize="12" FontWeight="SemiBold"
+                                                   Foreground="{DynamicResource TextSecondaryBrush}"/>
+                                        <TextBlock Text="Aprovecha el espacio para planificar o disfrutar el descanso."
+                                                   FontSize="10" Foreground="{DynamicResource TextMutedBrush}"
+                                                   TextWrapping="Wrap" Margin="0,2,0,0"/>
+                                    </StackPanel>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Card 2: Filtros rápidos / Quick Add -->
+                            <Border Background="{DynamicResource SurfaceBrush}" CornerRadius="18" Padding="14,12">
+                                <StackPanel>
+                                    <Grid Margin="0,0,0,8">
+                                        <TextBlock Text="Filtros rápidos" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                        <Button Command="{Binding Tasks.ShowAddTaskCommand}"
+                                                Style="{StaticResource DarkPillButton}"
+                                                Content="+ Nueva" FontSize="10" Padding="10,4" HorizontalAlignment="Right"/>
+                                    </Grid>
+                                    <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                                        <Button Command="{Binding Tasks.FilterByCategoryCommand}" CommandParameter="Work"
+                                                Background="Transparent" BorderThickness="0" Cursor="Hand" Padding="0" Margin="0,0,6,0">
+                                            <Border Background="{DynamicResource SurfaceHoverBrush}" CornerRadius="10" Padding="8,4">
+                                                <TextBlock Text="💼 Trabajo" FontSize="11" Foreground="{DynamicResource TextOnMutedBrush}"/>
+                                            </Border>
+                                        </Button>
+                                        <Button Command="{Binding Tasks.FilterByCategoryCommand}" CommandParameter="Health"
+                                                Background="Transparent" BorderThickness="0" Cursor="Hand" Padding="0" Margin="0,0,6,0">
+                                            <Border Background="{DynamicResource AccentBrush}" CornerRadius="10" Padding="8,4">
+                                                <TextBlock Text="💪 Salud" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource AccentInkDeepBrush}"/>
+                                            </Border>
+                                        </Button>
+                                        <Button Command="{Binding Tasks.FilterByCategoryCommand}" CommandParameter="Study"
+                                                Background="Transparent" BorderThickness="0" Cursor="Hand" Padding="0" Margin="0,0,6,0">
+                                            <Border Background="{DynamicResource SurfaceHoverBrush}" CornerRadius="10" Padding="8,4">
+                                                <TextBlock Text="📚 Estudio" FontSize="11" Foreground="{DynamicResource TextOnMutedBrush}"/>
+                                            </Border>
+                                        </Button>
+                                        <Button Command="{Binding Tasks.FilterByCategoryCommand}" CommandParameter="All"
+                                                Background="Transparent" BorderThickness="0" Cursor="Hand" Padding="0">
+                                            <Border Background="{DynamicResource SurfaceMutedBrush}" CornerRadius="10" Padding="8,4">
+                                                <TextBlock Text="✨ Todas" FontSize="11" Foreground="{DynamicResource TextOnMutedBrush}"/>
+                                            </Border>
+                                        </Button>
+                                    </StackPanel>
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                    </ScrollViewer>
+                </Grid>
+
+                <!-- ======================================================== -->
+                <!-- RIGHT CONTENT COLUMN (Stats Bar + Schedule Board Card)   -->
+                <!-- ======================================================== -->
+                <Grid Grid.Column="1" Margin="4,0,0,0">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/> <!-- Top Stats & Action Bar -->
+                        <RowDefinition Height="*"/>    <!-- White Schedule Card Container -->
+                    </Grid.RowDefinitions>
+
+                    <!-- Top Stats & Action Bar -->
+                    <Grid Grid.Row="0" Margin="4,0,4,12">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+
+                        <!-- Stat 1: Pendientes -->
+                        <StackPanel Grid.Column="1" Margin="0,0,26,0" VerticalAlignment="Center">
+                            <TextBlock Text="PENDIENTES" FontSize="9" FontWeight="SemiBold" Foreground="{DynamicResource StatLabelBrush}" FontFamily="Segoe UI"/>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="{Binding Dashboard.PendingCount}"
+                                           FontSize="22" FontWeight="Bold" Foreground="White" FontFamily="Segoe UI"/>
+                                <TextBlock Text=" tareas" FontSize="11" Foreground="{DynamicResource HeaderTextBrush}" VerticalAlignment="Bottom" Margin="4,0,0,3"/>
+                            </StackPanel>
+                        </StackPanel>
+
+                        <!-- Stat 2: Completadas hoy -->
+                        <StackPanel Grid.Column="2" Margin="0,0,26,0" VerticalAlignment="Center">
+                            <TextBlock Text="COMPLETADAS HOY" FontSize="9" FontWeight="SemiBold" Foreground="{DynamicResource StatLabelBrush}" FontFamily="Segoe UI"/>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="{Binding Dashboard.CompletedToday}"
+                                           FontSize="22" FontWeight="Bold" Foreground="White" FontFamily="Segoe UI"/>
+                                <TextBlock Text=" hechas" FontSize="11" Foreground="{DynamicResource HeaderTextBrush}" VerticalAlignment="Bottom" Margin="4,0,0,3"/>
+                            </StackPanel>
+                        </StackPanel>
+
+                        <!-- Stat 3: Progreso + barra animada -->
+                        <StackPanel Grid.Column="3" Margin="0,0,24,0" VerticalAlignment="Center" MinWidth="92">
+                            <TextBlock Text="PROGRESO" FontSize="9" FontWeight="SemiBold" Foreground="{DynamicResource StatLabelBrush}" FontFamily="Segoe UI"/>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="{Binding Dashboard.CompletionPercentage}"
+                                           FontSize="22" FontWeight="Bold" Foreground="White" FontFamily="Segoe UI"/>
+                                <TextBlock Text=" %" FontSize="13" FontWeight="Bold" Foreground="{DynamicResource AccentSoftBrush}" VerticalAlignment="Bottom" Margin="2,0,0,3"/>
+                            </StackPanel>
+                            <ProgressBar Style="{StaticResource LimeProgressBar}" Height="5" Width="86"
+                                         Value="{Binding Dashboard.CompletionPercentage, Mode=OneWay}" Maximum="100"
+                                         Margin="0,3,0,0"/>
+                        </StackPanel>
+
+                        <!-- Action Button -->
+                        <Button Grid.Column="4"
+                                Command="{Binding NewTaskCommand}"
+                                Style="{StaticResource DarkPillButton}"
+                                Content="+ Nueva tarea"
+                                VerticalAlignment="Center"/>
+                    </Grid>
+
+                    <!-- ======================================================== -->
+                    <!-- BIG SCHEDULE TIMELINE CARD (WHITE CONTAINER)             -->
+                    <!-- ======================================================== -->
+                    <Border Grid.Row="1" Background="{DynamicResource SurfaceBrush}" CornerRadius="22" Padding="20,16">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/> <!-- Timeline Header -->
+                                <RowDefinition Height="Auto"/> <!-- Fast Add / Edit Task Form (Collapsible) -->
+                                <RowDefinition Height="*"/>    <!-- Time Schedule Grid & Event Blocks -->
+                            </Grid.RowDefinitions>
+
+                            <!-- Timeline Header: Date & Navigation -->
+                            <Grid Grid.Row="0" Margin="0,0,0,16">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <TextBlock Text="{Binding FormattedSelectedDate, FallbackValue='January 05 - 2026'}"
+                                               FontSize="15" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}" FontFamily="Segoe UI"/>
+                                    <Grid Width="170" Margin="18,0,0,0">
+                                        <TextBox Text="{Binding Tasks.SearchText, UpdateSourceTrigger=PropertyChanged}"
+                                                 Style="{StaticResource CleanTextBox}"
+                                                 ToolTip="Buscar tareas..."/>
+                                        <TextBlock Text="🔎 Buscar tareas..."
+                                                   FontSize="12" Foreground="{DynamicResource TextMutedBrush}"
+                                                   Margin="11,0,0,0" VerticalAlignment="Center"
+                                                   IsHitTestVisible="False">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding Tasks.SearchText}" Value="">
+                                                            <Setter Property="Visibility" Value="Visible"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+                                    </Grid>
+                                </StackPanel>
+
+                                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                                    <Button Command="{Binding GoToTodayCommand}" Background="Transparent" BorderThickness="0" Cursor="Hand">
+                                        <Border Background="{DynamicResource SurfaceMutedBrush}" CornerRadius="12" Padding="12,5" Margin="0,0,8,0">
+                                            <TextBlock Text="Hoy" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                        </Border>
+                                    </Button>
+                                    <Button Command="{Binding PreviousDayCommand}" Style="{StaticResource SmallCircleButton}" Width="26" Height="26" Background="{DynamicResource SurfaceMutedBrush}" Margin="0,0,4,0">
+                                        <TextBlock Text="‹" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                    </Button>
+                                    <Button Command="{Binding NextDayCommand}" Style="{StaticResource SmallCircleButton}" Width="26" Height="26" Background="{DynamicResource SurfaceMutedBrush}">
+                                        <TextBlock Text="›" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                    </Button>
+                                </StackPanel>
+                            </Grid>
+
+                            <!-- Fast Add/Edit Task Form (collapsible) -->
+                            <Border Grid.Row="1" Background="{DynamicResource SurfaceInputAltBrush}" CornerRadius="14" Padding="14" Margin="0,0,0,14"
+                                    Visibility="{Binding Tasks.IsFormVisible, Converter={StaticResource BoolToVis}}">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="2*"/>
+                                        <ColumnDefinition Width="1.2*"/>
+                                        <ColumnDefinition Width="1*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <!-- Cerrar formulario -->
+                                    <Button Grid.Column="3" HorizontalAlignment="Right" VerticalAlignment="Top"
+                                            Command="{Binding Tasks.CancelEditCommand}"
+                                            Background="Transparent" BorderThickness="0" Cursor="Hand"
+                                            ToolTip="Ocultar formulario" Margin="0,-4,-4,0">
+                                        <TextBlock Text="✕" FontSize="10" FontWeight="Bold"
+                                                   Foreground="{DynamicResource TextMutedBrush}"/>
+                                    </Button>
+
+                                    <!-- Title Input -->
+                                    <StackPanel Grid.Column="0" Margin="0,0,10,0">
+                                        <TextBlock Text="NUEVA ACTIVIDAD / TAREA" FontSize="9" FontWeight="Bold" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,0,4"/>
+                                        <TextBox Text="{Binding Tasks.NewTitle, UpdateSourceTrigger=PropertyChanged}"
+                                                 Style="{StaticResource CleanTextBox}"/>
+                                    </StackPanel>
+
+                                    <!-- Priority Selector -->
+                                    <StackPanel Grid.Column="1" Margin="0,0,10,0">
+                                        <TextBlock Text="PRIORIDAD / COLOR" FontSize="9" FontWeight="Bold" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,0,4"/>
+                                        <ComboBox ItemsSource="{Binding Tasks.Priorities}"
+                                                  SelectedItem="{Binding Tasks.NewPriority}"
+                                                  Style="{StaticResource CleanComboBox}">
+                                            <ComboBox.ItemTemplate>
+                                                <DataTemplate>
+                                                    <TextBlock Text="{Binding Converter={StaticResource PriorityLabel}}"/>
+                                                </DataTemplate>
+                                            </ComboBox.ItemTemplate>
+                                        </ComboBox>
+                                    </StackPanel>
+
+                                    <!-- Category Selector -->
+                                    <StackPanel Grid.Column="2" Margin="0,0,10,0">
+                                        <TextBlock Text="CATEGORÍA" FontSize="9" FontWeight="Bold" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,0,4"/>
+                                        <ComboBox ItemsSource="{Binding Tasks.Categories}"
+                                                  SelectedItem="{Binding Tasks.NewCategory}"
+                                                  Style="{StaticResource CleanComboBox}">
+                                            <ComboBox.ItemTemplate>
+                                                <DataTemplate>
+                                                    <TextBlock Text="{Binding Converter={StaticResource CatLabel}}"/>
+                                                </DataTemplate>
+                                            </ComboBox.ItemTemplate>
+                                        </ComboBox>
+                                    </StackPanel>
+
+                                    <!-- Action Button -->
+                                    <StackPanel Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Bottom">
+                                        <Button Command="{Binding Tasks.AddTaskCommand}"
+                                                Visibility="{Binding Tasks.IsEditing, Converter={StaticResource InvBoolToVis}}"
+                                                Style="{StaticResource DarkPillButton}"
+                                                Content="➕ Guardar" Height="32" Padding="14,4"/>
+                                        <Button Command="{Binding Tasks.SaveEditCommand}"
+                                                Visibility="{Binding Tasks.IsEditing, Converter={StaticResource BoolToVis}}"
+                                                Style="{StaticResource DarkPillButton}"
+                                                Content="💾 Guardar" Height="32" Padding="14,4" Margin="0,0,4,0"/>
+                                        <Button Command="{Binding Tasks.CancelEditCommand}"
+                                                Visibility="{Binding Tasks.IsEditing, Converter={StaticResource BoolToVis}}"
+                                                Style="{StaticResource SmallCircleButton}"
+                                                ToolTip="Cancelar" Height="32" Width="32">
+                                            <TextBlock Text="✕" FontSize="11" Foreground="White"/>
+                                        </Button>
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
+
+                            <!-- Timeline: real week strip + plan del día -->
+                            <Grid Grid.Row="2">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="*"/>
+                                </Grid.RowDefinitions>
+
+                                <!-- Week strip con fechas reales -->
+                                <Grid Grid.Row="0" Margin="0,0,0,10">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="70"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                                        <TextBlock Text="SEMANA" FontSize="8" FontWeight="Bold"
+                                                   Foreground="{DynamicResource TextSubtleBrush}"/>
+                                        <TextBlock Text="{Binding WeekRangeLabel}" FontSize="10" FontWeight="SemiBold"
+                                                   Foreground="{DynamicResource TextMutedStrongBrush}" Margin="0,1,0,0"/>
+                                    </StackPanel>
+
+                                    <ItemsControl Grid.Column="1" ItemsSource="{Binding WeekDays}">
+                                        <ItemsControl.ItemsPanel>
+                                            <ItemsPanelTemplate>
+                                                <UniformGrid Columns="7"/>
+                                            </ItemsPanelTemplate>
+                                        </ItemsControl.ItemsPanel>
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Button Command="{Binding DataContext.SelectDateCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                        CommandParameter="{Binding Date}"
+                                                        Background="Transparent" BorderThickness="0" Cursor="Hand"
+                                                        Padding="0" HorizontalContentAlignment="Stretch"
+                                                        ToolTip="{Binding Date, StringFormat='{}{0:dddd, dd MMMM}'}">
+                                                    <Border Style="{StaticResource DayChipBorder}">
+                                                        <StackPanel>
+                                                            <TextBlock Text="{Binding DayNumber}" Style="{StaticResource DayNumberText}"/>
+                                                            <TextBlock Text="{Binding DayName}" Style="{StaticResource DayNameText}"/>
+                                                        </StackPanel>
+                                                    </Border>
+                                                </Button>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </Grid>
+
+                                <!-- Plan del día -->
+                                <Border Grid.Row="1" Background="{DynamicResource SurfaceAltBrush}" CornerRadius="18" Padding="16,12">
+                                    <Grid>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="*"/>
+                                        </Grid.RowDefinitions>
+
+                                        <Grid Grid.Row="0" Margin="0,0,0,8">
+                                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                <Ellipse Width="7" Height="7" Fill="{DynamicResource TimelineDotBrush}" Margin="0,0,8,0"/>
+                                                <TextBlock Text="PLAN DEL DÍA" FontSize="10" FontWeight="Bold"
+                                                           Foreground="{DynamicResource TextSecondaryBrush}" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                            <Border HorizontalAlignment="Right" Background="{DynamicResource SurfaceMutedBrush}"
+                                                    CornerRadius="9" Padding="8,2">
+                                                <TextBlock Text="{Binding Tasks.FilteredTasks.Count, StringFormat='{}{0} tareas'}"
+                                                           FontSize="9" FontWeight="SemiBold"
+                                                           Foreground="{DynamicResource TextMutedStrongBrush}"/>
+                                            </Border>
+                                        </Grid>
+
+                                        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                                            <ItemsControl ItemsSource="{Binding Tasks.FilteredTasks}">
+                                                <ItemsControl.ItemsPanel>
+                                                    <ItemsPanelTemplate>
+                                                        <WrapPanel Orientation="Horizontal"/>
+                                                    </ItemsPanelTemplate>
+                                                </ItemsControl.ItemsPanel>
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <Border Width="164" Margin="0,0,10,10" CornerRadius="14"
+                                                                Background="{Binding Priority, Converter={StaticResource PriorityCardBrush}}"
+                                                                Padding="11,9" Cursor="Hand"
+                                                                Style="{StaticResource HoverLiftCard}">
+                                                            <Border.Effect>
+                                                                <DropShadowEffect BlurRadius="10" ShadowDepth="2" Opacity="0.10" Color="{DynamicResource CardShadowColor}"/>
+                                                            </Border.Effect>
+                                                            <Grid>
+                                                                <Grid.RowDefinitions>
+                                                                    <RowDefinition Height="Auto"/>
+                                                                    <RowDefinition Height="Auto"/>
+                                                                    <RowDefinition Height="Auto"/>
+                                                                </Grid.RowDefinitions>
+
+                                                                <TextBlock Grid.Row="0" Text="{Binding Title}"
+                                                                           FontWeight="Bold" FontSize="11"
+                                                                           Foreground="{Binding Priority, Converter={StaticResource PriorityCardFg}}"
+                                                                           TextTrimming="CharacterEllipsis"/>
+
+                                                                <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,3,0,6">
+                                                                    <TextBlock Text="{Binding Category, Converter={StaticResource CatIcon}}"
+                                                                               FontSize="9" Margin="0,0,3,0"/>
+                                                                    <TextBlock Text="{Binding Category, Converter={StaticResource CatLabel}}"
+                                                                               FontSize="9" FontWeight="SemiBold" Opacity="0.85"
+                                                                               Foreground="{Binding Priority, Converter={StaticResource PriorityCardFg}}"/>
+                                                                    <TextBlock Text="  ·  " FontSize="9" Opacity="0.55"
+                                                                               Foreground="{Binding Priority, Converter={StaticResource PriorityCardFg}}"/>
+                                                                    <TextBlock Text="{Binding DurationLabel}" FontSize="9"
+                                                                               Foreground="{Binding Priority, Converter={StaticResource PriorityCardFg}}"
+                                                                               Opacity="0.8"/>
+                                                                </StackPanel>
+
+                                                                <Grid Grid.Row="2">
+                                                                    <Button Command="{Binding DataContext.Tasks.ToggleCompleteCommand,
+                                                                                RelativeSource={RelativeSource AncestorType=Window}}"
+                                                                            CommandParameter="{Binding}"
+                                                                            HorizontalAlignment="Left" Background="Transparent"
+                                                                            BorderThickness="0" Cursor="Hand">
+                                                                        <TextBlock Text="✓ Hecho" FontSize="9" FontWeight="SemiBold"
+                                                                                   Foreground="{Binding Priority, Converter={StaticResource PriorityCardFg}}"/>
+                                                                    </Button>
+                                                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                                                                        <Button Command="{Binding DataContext.Tasks.EditTaskCommand,
+                                                                                    RelativeSource={RelativeSource AncestorType=Window}}"
+                                                                                CommandParameter="{Binding}"
+                                                                                Background="Transparent" BorderThickness="0" Cursor="Hand"
+                                                                                ToolTip="Editar" Margin="0,0,4,0">
+                                                                            <TextBlock Text="✏️" FontSize="9"/>
+                                                                        </Button>
+                                                                        <Button Command="{Binding DataContext.Tasks.DeleteTaskCommand,
+                                                                                    RelativeSource={RelativeSource AncestorType=Window}}"
+                                                                                CommandParameter="{Binding}"
+                                                                                Background="Transparent" BorderThickness="0" Cursor="Hand"
+                                                                                ToolTip="Eliminar">
+                                                                            <TextBlock Text="🗑" FontSize="10"/>
+                                                                        </Button>
+                                                                    </StackPanel>
+                                                                </Grid>
+                                                            </Grid>
+                                                        </Border>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+                                        </ScrollViewer>
+
+                                        <!-- Empty state del plan -->
+                                        <StackPanel Grid.Row="1" VerticalAlignment="Center" HorizontalAlignment="Center"
+                                                    Visibility="{Binding Tasks.HasFilteredTasks, Converter={StaticResource InvBoolToVis}}"
+                                                    Margin="0,18,0,18">
+                                            <TextBlock Text="🌿" FontSize="26" HorizontalAlignment="Center" Margin="0,0,0,6"/>
+                                            <TextBlock Text="Día despejado" FontSize="13" FontWeight="Bold"
+                                                       Foreground="{DynamicResource TextStrongBrush}" HorizontalAlignment="Center"/>
+                                            <TextBlock Text="No hay tareas programadas para este día."
+                                                       FontSize="10" Foreground="{DynamicResource TextMutedBrush}"
+                                                       HorizontalAlignment="Center" Margin="0,2,0,0"/>
+                                        </StackPanel>
+                                    </Grid>
+                                </Border>
+                            </Grid>
+                        </Grid>
+                    </Border>
+                </Grid>
+            </Grid>
+
+            <!-- 2. MIS TAREAS (TASKS VIEW) -->
+            <Grid Style="{StaticResource SectionTransition}"
+                  Visibility="{Binding ActiveSection, Converter={StaticResource StrEqVis}, ConverterParameter='Tasks'}">
+                <Border Background="{DynamicResource SurfaceBrush}" CornerRadius="22" Padding="24,20">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/> <!-- Header & Filters -->
+                            <RowDefinition Height="Auto"/> <!-- Category Filter Pills -->
+                            <RowDefinition Height="Auto"/> <!-- Inline task form -->
+                            <RowDefinition Height="*"/>    <!-- Task List (Scrollable) -->
+                        </Grid.RowDefinitions>
+
+                        <!-- Header con Búsqueda y Botón Nueva Tarea -->
+                        <Grid Grid.Row="0" Margin="0,0,0,16">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+
+                            <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                                <StackPanel Orientation="Horizontal">
+                                    <fa:IconImage Icon="ListCheck" Width="20" Height="20" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,8,0"/>
+                                    <TextBlock Text="Mis Tareas" FontSize="20" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                </StackPanel>
+                                <TextBlock Text="Administra, busca y organiza todas tus actividades por categoría y prioridad."
+                                           FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}" Margin="28,2,0,0"/>
+                            </StackPanel>
+
+                            <!-- Buscador Rápido -->
+                            <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                <Grid Width="220">
+                                    <TextBox Text="{Binding Tasks.SearchText, UpdateSourceTrigger=PropertyChanged}"
+                                             Style="{StaticResource CleanTextBox}"
+                                             Padding="12,7" ToolTip="Buscar tareas por título o descripción..."/>
+                                    <TextBlock Text="🔎 Buscar tareas..."
+                                               FontSize="12" Foreground="{DynamicResource TextMutedBrush}"
+                                               Margin="12,0,0,0" VerticalAlignment="Center"
+                                               IsHitTestVisible="False">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding Tasks.SearchText}" Value="">
+                                                        <Setter Property="Visibility" Value="Visible"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+                                </Grid>
+                            </StackPanel>
+
+                            <!-- Botones de Acción -->
+                            <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                                <Button Command="{Binding Tasks.ShowAddTaskCommand}"
+                                        Style="{StaticResource DarkPillButton}"
+                                        Content="+ Nueva Tarea" Padding="14,8"/>
+                            </StackPanel>
+                        </Grid>
+
+                        <!-- Barra de Categorías -->
+                        <Border Grid.Row="1" Background="{DynamicResource SurfaceAltBrush}" CornerRadius="14" Padding="12,8" Margin="0,0,0,16">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="Categorías:" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource TextMutedStrongBrush}" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                                <Button Command="{Binding Tasks.FilterByCategoryCommand}" CommandParameter="All"
+                                        Background="Transparent" BorderThickness="0" Cursor="Hand" Margin="0,0,6,0">
+                                    <Border Background="{DynamicResource PrimaryBrush}" CornerRadius="10" Padding="10,4">
+                                        <TextBlock Text="✨ Todas" FontSize="11" FontWeight="SemiBold" Foreground="White"/>
+                                    </Border>
+                                </Button>
+                                <Button Command="{Binding Tasks.FilterByCategoryCommand}" CommandParameter="Work"
+                                        Background="Transparent" BorderThickness="0" Cursor="Hand" Margin="0,0,6,0">
+                                    <Border Background="{DynamicResource SurfaceHoverBrush}" CornerRadius="10" Padding="10,4">
+                                        <TextBlock Text="💼 Trabajo" FontSize="11" Foreground="{DynamicResource TextOnMutedBrush}"/>
+                                    </Border>
+                                </Button>
+                                <Button Command="{Binding Tasks.FilterByCategoryCommand}" CommandParameter="Health"
+                                        Background="Transparent" BorderThickness="0" Cursor="Hand" Margin="0,0,6,0">
+                                    <Border Background="{DynamicResource AccentBrush}" CornerRadius="10" Padding="10,4">
+                                        <TextBlock Text="💪 Salud" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource AccentInkDeepBrush}"/>
+                                    </Border>
+                                </Button>
+                                <Button Command="{Binding Tasks.FilterByCategoryCommand}" CommandParameter="Study"
+                                        Background="Transparent" BorderThickness="0" Cursor="Hand" Margin="0,0,6,0">
+                                    <Border Background="{DynamicResource SurfaceHoverBrush}" CornerRadius="10" Padding="10,4">
+                                        <TextBlock Text="📚 Estudio" FontSize="11" Foreground="{DynamicResource TextOnMutedBrush}"/>
+                                    </Border>
+                                </Button>
+                                <Button Command="{Binding Tasks.FilterByCategoryCommand}" CommandParameter="Personal"
+                                        Background="Transparent" BorderThickness="0" Cursor="Hand">
+                                    <Border Background="{DynamicResource SurfaceHoverBrush}" CornerRadius="10" Padding="10,4">
+                                        <TextBlock Text="👤 Personal" FontSize="11" Foreground="{DynamicResource TextOnMutedBrush}"/>
+                                    </Border>
+                                </Button>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Formulario rápido (crear / editar) -->
+                        <Border Grid.Row="2" Background="{DynamicResource SurfaceInputAltBrush}" CornerRadius="14"
+                                Padding="14" Margin="0,0,0,14"
+                                Visibility="{Binding Tasks.IsFormVisible, Converter={StaticResource BoolToVis}}">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="2*"/>
+                                    <ColumnDefinition Width="1.2*"/>
+                                    <ColumnDefinition Width="1.2*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+
+                                <StackPanel Grid.Column="0" Margin="0,0,10,0">
+                                    <TextBlock Text="NUEVA ACTIVIDAD / TAREA" FontSize="9" FontWeight="Bold"
+                                               Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,0,4"/>
+                                    <TextBox Text="{Binding Tasks.NewTitle, UpdateSourceTrigger=PropertyChanged}"
+                                             Style="{StaticResource CleanTextBox}"/>
+                                </StackPanel>
+
+                                <StackPanel Grid.Column="1" Margin="0,0,10,0">
+                                    <TextBlock Text="PRIORIDAD / COLOR" FontSize="9" FontWeight="Bold"
+                                               Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,0,4"/>
+                                    <ComboBox ItemsSource="{Binding Tasks.Priorities}"
+                                              SelectedItem="{Binding Tasks.NewPriority}"
+                                              Style="{StaticResource CleanComboBox}">
+                                        <ComboBox.ItemTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{Binding Converter={StaticResource PriorityLabel}}"/>
+                                            </DataTemplate>
+                                        </ComboBox.ItemTemplate>
+                                    </ComboBox>
+                                </StackPanel>
+
+                                <StackPanel Grid.Column="2" Margin="0,0,10,0">
+                                    <TextBlock Text="CATEGORÍA" FontSize="9" FontWeight="Bold"
+                                               Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,0,4"/>
+                                    <ComboBox ItemsSource="{Binding Tasks.Categories}"
+                                              SelectedItem="{Binding Tasks.NewCategory}"
+                                              Style="{StaticResource CleanComboBox}">
+                                        <ComboBox.ItemTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{Binding Converter={StaticResource CatLabel}}"/>
+                                            </DataTemplate>
+                                        </ComboBox.ItemTemplate>
+                                    </ComboBox>
+                                </StackPanel>
+
+                                <StackPanel Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Bottom">
+                                    <Button Command="{Binding Tasks.AddTaskCommand}"
+                                            Visibility="{Binding Tasks.IsEditing, Converter={StaticResource InvBoolToVis}}"
+                                            Style="{StaticResource DarkPillButton}"
+                                            Content="➕ Guardar" Height="32" Padding="14,4"/>
+                                    <Button Command="{Binding Tasks.SaveEditCommand}"
+                                            Visibility="{Binding Tasks.IsEditing, Converter={StaticResource BoolToVis}}"
+                                            Style="{StaticResource DarkPillButton}"
+                                            Content="💾 Guardar" Height="32" Padding="14,4" Margin="0,0,4,0"/>
+                                    <Button Command="{Binding Tasks.CancelEditCommand}"
+                                            Style="{StaticResource SmallCircleButton}"
+                                            ToolTip="Ocultar formulario" Height="32" Width="32" Margin="6,0,0,0">
+                                        <TextBlock Text="✕" FontSize="11" Foreground="White"/>
+                                    </Button>
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+
+                        <!-- Lista de Tareas Filtradas -->
+                        <ScrollViewer Grid.Row="3" VerticalScrollBarVisibility="Auto">
+                            <ItemsControl ItemsSource="{Binding Tasks.FilteredTasks}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border Background="{Binding Priority, Converter={StaticResource PriorityCardBrush}}"
+                                                CornerRadius="14" Padding="16,12" Margin="0,0,0,10">
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                </Grid.ColumnDefinitions>
+
+                                                <!-- Checkbox Circular -->
+                                                <Button Grid.Column="0"
+                                                        Command="{Binding DataContext.Tasks.ToggleCompleteCommand,
+                                                            RelativeSource={RelativeSource AncestorType=Window}}"
+                                                        CommandParameter="{Binding}"
+                                                        Background="Transparent" BorderThickness="0" Cursor="Hand" Margin="0,0,14,0" VerticalAlignment="Center">
+                                                    <Border Width="22" Height="22" CornerRadius="11"
+                                                            BorderBrush="{DynamicResource AccentInkBrush}" BorderThickness="1.5"
+                                                            Background="{DynamicResource SurfaceBrush}">
+                                                        <TextBlock Text="✓" FontSize="12" FontWeight="Bold"
+                                                                   Foreground="{DynamicResource TextPrimaryBrush}" HorizontalAlignment="Center"
+                                                                   VerticalAlignment="Center"
+                                                                   Visibility="{Binding IsCompleted, Converter={StaticResource BoolToVis}}"/>
+                                                    </Border>
+                                                </Button>
+
+                                                <!-- Información de la Tarea -->
+                                                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,3">
+                                                        <TextBlock Text="{Binding Category, Converter={StaticResource CatIcon}}" FontSize="13" Margin="0,0,6,0"/>
+                                                        <TextBlock Text="{Binding Title}" FontSize="14" FontWeight="Bold"
+                                                                   Foreground="{Binding Priority, Converter={StaticResource PriorityCardFg}}"
+                                                                   TextDecorations="{Binding IsCompleted, Converter={StaticResource Strikethrough}}"
+                                                                   TextTrimming="CharacterEllipsis"/>
+                                                    </StackPanel>
+                                                    <TextBlock Text="{Binding Description}" FontSize="11"
+                                                               Foreground="{Binding Priority, Converter={StaticResource PriorityCardFg}}"
+                                                               Opacity="0.8" TextTrimming="CharacterEllipsis"
+                                                               Visibility="{Binding Description, Converter={StaticResource StringNotEmptyToVis}}"/>
+                                                    <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                                                        <TextBlock Text="{Binding DueDate, StringFormat='📅 {0:dd MMM yyyy}'}" FontSize="10"
+                                                                   Foreground="{Binding Priority, Converter={StaticResource PriorityCardFg}}" Opacity="0.75" Margin="0,0,12,0"/>
+                                                        <TextBlock Text="{Binding Priority, Converter={StaticResource PriorityLabel}, StringFormat='Prioridad: {0}'}" FontSize="10"
+                                                                   Foreground="{Binding Priority, Converter={StaticResource PriorityCardFg}}" Opacity="0.75"/>
+                                                    </StackPanel>
+                                                </StackPanel>
+
+                                                <!-- Acciones (Editar, Eliminar) -->
+                                                <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                                                    <Button Command="{Binding DataContext.Tasks.EditTaskCommand,
+                                                                RelativeSource={RelativeSource AncestorType=Window}}"
+                                                            CommandParameter="{Binding}"
+                                                            Background="Transparent" BorderThickness="0" Cursor="Hand" ToolTip="Editar tarea" Margin="0,0,8,0">
+                                                        <Border Background="{DynamicResource SurfaceBrush}" CornerRadius="8" Padding="8,4">
+                                                            <TextBlock Text="✏️ Editar" FontSize="11" Foreground="{DynamicResource TextPrimaryBrush}" FontWeight="SemiBold"/>
+                                                        </Border>
+                                                    </Button>
+                                                    <Button Command="{Binding DataContext.Tasks.DeleteTaskCommand,
+                                                                RelativeSource={RelativeSource AncestorType=Window}}"
+                                                            CommandParameter="{Binding}"
+                                                            Background="Transparent" BorderThickness="0" Cursor="Hand" ToolTip="Eliminar tarea">
+                                                        <Border Background="{DynamicResource DangerSoftBrush}" CornerRadius="8" Padding="8,4">
+                                                            <TextBlock Text="🗑 Eliminar" FontSize="11" Foreground="{DynamicResource DangerTextBrush}" FontWeight="SemiBold"/>
+                                                        </Border>
+                                                    </Button>
+                                                </StackPanel>
+                                            </Grid>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ScrollViewer>
+
+                        <!-- Estado vacío de la lista -->
+                        <StackPanel Grid.Row="3" VerticalAlignment="Center" HorizontalAlignment="Center"
+                                    Visibility="{Binding Tasks.HasFilteredTasks, Converter={StaticResource InvBoolToVis}}"
+                                    Margin="0,20,0,20">
+                            <TextBlock Text="🍃" FontSize="30" HorizontalAlignment="Center" Margin="0,0,0,8"/>
+                            <TextBlock Text="No hay tareas con estos filtros" FontSize="15" FontWeight="Bold"
+                                       Foreground="{DynamicResource TextStrongBrush}" HorizontalAlignment="Center"/>
+                            <TextBlock Text="Prueba otra categoría o crea una nueva tarea."
+                                       FontSize="11" Foreground="{DynamicResource TextMutedBrush}"
+                                       HorizontalAlignment="Center" Margin="0,3,0,0"/>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+            </Grid>
+
+            <!-- 3. CALENDARIO (CALENDAR VIEW) -->
+            <Grid Style="{StaticResource SectionTransition}"
+                  Visibility="{Binding ActiveSection, Converter={StaticResource StrEqVis}, ConverterParameter='Calendar'}">
+                <Border Background="{DynamicResource SurfaceBrush}" CornerRadius="22" Padding="24,20">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/> <!-- Header con selector de fecha -->
+                            <RowDefinition Height="*"/>    <!-- Contenido: Mini Calendario a la izquierda y Agenda del día a la derecha -->
+                        </Grid.RowDefinitions>
+
+                        <!-- Header -->
+                        <Grid Grid.Row="0" Margin="0,0,0,18">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+
+                            <StackPanel VerticalAlignment="Center">
+                                <StackPanel Orientation="Horizontal">
+                                    <fa:IconImage Icon="CalendarDays" Width="20" Height="20" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,8,0"/>
+                                    <TextBlock Text="Calendario &amp; Agenda Diaria" FontSize="20" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                </StackPanel>
+                                <TextBlock Text="{Binding Calendar.SelectedDateLabel}"
+                                           FontSize="12" Foreground="{DynamicResource TextSecondaryBrush}" Margin="28,2,0,0"/>
+                            </StackPanel>
+
+                            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                                <Button Command="{Binding GoToTodayCommand}" Background="Transparent" BorderThickness="0" Cursor="Hand">
+                                    <Border Background="{DynamicResource SurfaceMutedBrush}" CornerRadius="12" Padding="14,6" Margin="0,0,8,0">
+                                        <TextBlock Text="Hoy" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                    </Border>
+                                </Button>
+                                <Button Command="{Binding PreviousDayCommand}" Style="{StaticResource SmallCircleButton}" Width="30" Height="30" Background="{DynamicResource SurfaceMutedBrush}" Margin="0,0,6,0">
+                                    <TextBlock Text="‹" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                </Button>
+                                <Button Command="{Binding NextDayCommand}" Style="{StaticResource SmallCircleButton}" Width="30" Height="30" Background="{DynamicResource SurfaceMutedBrush}">
+                                    <TextBlock Text="›" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                </Button>
+                            </StackPanel>
+                        </Grid>
+
+                        <!-- Dos Columnas: Calendario mensual y Tareas del día -->
+                        <Grid Grid.Row="1">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="340"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+
+                            <!-- Izquierda: Calendario mensual interactivo -->
+                            <Border Grid.Column="0" Background="{DynamicResource SurfaceAltBrush}" CornerRadius="18" Padding="16" Margin="0,0,16,0">
+                                <StackPanel HorizontalAlignment="Center">
+                                    <Calendar Style="{StaticResource calendarStyle}"
+                                              SelectedDate="{Binding Calendar.SelectedDate, Mode=TwoWay}"
+                                              HorizontalAlignment="Center"/>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Derecha: Tareas programadas para este día -->
+                            <Border Grid.Column="1" Background="{DynamicResource SurfaceAltBrush}" CornerRadius="18" Padding="20">
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="*"/>
+                                    </Grid.RowDefinitions>
+
+                                    <TextBlock Grid.Row="0" Text="ACTIVIDADES PARA ESTA FECHA" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource TextMutedBrush}" Margin="0,0,0,12"/>
+
+                                    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                                        <ItemsControl ItemsSource="{Binding Calendar.TasksForSelectedDay}">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate>
+                                                    <Border Background="{DynamicResource SurfaceBrush}" CornerRadius="14" Padding="16,12" Margin="0,0,0,10">
+                                                        <Grid>
+                                                            <Grid.ColumnDefinitions>
+                                                                <ColumnDefinition Width="Auto"/>
+                                                                <ColumnDefinition Width="*"/>
+                                                                <ColumnDefinition Width="Auto"/>
+                                                            </Grid.ColumnDefinitions>
+
+                                                            <Button Grid.Column="0"
+                                                                    Command="{Binding DataContext.Tasks.ToggleCompleteCommand,
+                                                                        RelativeSource={RelativeSource AncestorType=Window}}"
+                                                                    CommandParameter="{Binding}"
+                                                                    Background="Transparent" BorderThickness="0" Cursor="Hand" Margin="0,0,12,0" VerticalAlignment="Center">
+                                                                <Border Width="20" Height="20" CornerRadius="10"
+                                                                        BorderBrush="{DynamicResource CheckboxBorderBrush}" BorderThickness="1.5"
+                                                                        Background="{Binding IsCompleted, Converter={StaticResource PriorityCardBrush}}">
+                                                                    <TextBlock Text="✓" FontSize="11" FontWeight="Bold"
+                                                                               Foreground="{DynamicResource TextPrimaryBrush}" HorizontalAlignment="Center"
+                                                                               VerticalAlignment="Center"
+                                                                               Visibility="{Binding IsCompleted, Converter={StaticResource BoolToVis}}"/>
+                                                                </Border>
+                                                            </Button>
+
+                                                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                                                <TextBlock Text="{Binding Title}" FontSize="13" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"
+                                                                           TextDecorations="{Binding IsCompleted, Converter={StaticResource Strikethrough}}"/>
+                                                                <TextBlock Text="{Binding Description}" FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,2,0,0"
+                                                                           Visibility="{Binding Description, Converter={StaticResource StringNotEmptyToVis}}"/>
+                                                            </StackPanel>
+
+                                                            <Border Grid.Column="2" Background="{Binding Priority, Converter={StaticResource PriorityCardBrush}}"
+                                                                    CornerRadius="8" Padding="8,4" VerticalAlignment="Center">
+                                                                <TextBlock Text="{Binding Priority, Converter={StaticResource PriorityLabel}}"
+                                                                           FontSize="10" FontWeight="SemiBold"
+                                                                           Foreground="{Binding Priority, Converter={StaticResource PriorityCardFg}}"/>
+                                                            </Border>
+                                                        </Grid>
+                                                    </Border>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                    </ScrollViewer>
+                                </Grid>
+                            </Border>
+                        </Grid>
+                    </Grid>
+                </Border>
+            </Grid>
+
+            <!-- 4. NOTAS DE CÓDIGO -->
+            <Grid Style="{StaticResource SectionTransition}"
+                  Visibility="{Binding ActiveSection, Converter={StaticResource StrEqVis}, ConverterParameter='Notes'}">
+                <views:NotesView DataContext="{Binding Notes}"/>
+            </Grid>
+
+            <!-- 5. BÓVEDA DE CLAVES -->
+            <Grid Style="{StaticResource SectionTransition}"
+                  Visibility="{Binding ActiveSection, Converter={StaticResource StrEqVis}, ConverterParameter='Vault'}">
+                <views:VaultView DataContext="{Binding Vault}"/>
+            </Grid>
+
+            <!-- 6. AI CHAT VIEW (OLLAMA) -->
+            <Grid Style="{StaticResource SectionTransition}"
+                  Visibility="{Binding ActiveSection, Converter={StaticResource StrEqVis}, ConverterParameter='Chat'}">
+                <views:AiChatView DataContext="{Binding AiChat}"/>
+            </Grid>
+
+            <!-- 7. DOC & PDF TOOLS VIEW -->
+            <Grid Style="{StaticResource SectionTransition}"
+                  Visibility="{Binding ActiveSection, Converter={StaticResource StrEqVis}, ConverterParameter='DocTools'}">
+                <views:DocToolsView DataContext="{Binding DocTools}"/>
+            </Grid>
+
+            <!-- 8. SETTINGS VIEW -->
+            <Grid Style="{StaticResource SectionTransition}"
+                  Visibility="{Binding ActiveSection, Converter={StaticResource StrEqVis}, ConverterParameter='Settings'}">
+                <views:SettingsView DataContext="{Binding Settings}"/>
+            </Grid>
+        </Grid>
+    </Grid>
+
+        <!-- ======================================================== -->
+        <!-- TOAST HOST (notificaciones no intrusivas)                -->
+        <!-- ======================================================== -->
+        <Border x:Name="ToastHost" Grid.RowSpan="2" Panel.ZIndex="99"                HorizontalAlignment="Right" VerticalAlignment="Bottom"
+                Margin="0,0,24,24" MinWidth="240" MaxWidth="340"
+                Background="{DynamicResource PrimaryBrush}" CornerRadius="14"
+                Padding="14,11" Opacity="0" Visibility="Collapsed"
+                Cursor="Hand" MouseLeftButtonUp="ToastHost_Click">
+            <Border.Effect>
+                <DropShadowEffect BlurRadius="22" ShadowDepth="4" Opacity="0.30"
+                                  Color="{DynamicResource WindowShadowColor}"/>
+            </Border.Effect>
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <Border Grid.Column="0" Width="28" Height="28" CornerRadius="14"
+                        Background="{DynamicResource AccentBrush}" VerticalAlignment="Top" Margin="0,0,10,0">
+                    <TextBlock x:Name="ToastGlyph" Text="✓" FontSize="13" FontWeight="Bold"
+                               Foreground="{DynamicResource AccentInkBrush}"
+                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Border>
+
+                <StackPanel Grid.Column="1">
+                    <TextBlock x:Name="ToastTitle" Text="DoItNow" FontSize="11" FontWeight="Bold"
+                               Foreground="{DynamicResource AccentBrush}"/>
+                    <TextBlock x:Name="ToastMessage" Text="" FontSize="11"
+                               Foreground="{DynamicResource TextOnDarkBrush}"
+                               TextWrapping="Wrap" Margin="0,2,0,0"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+    </Grid>
+</Border>
+</Window>
