@@ -2,6 +2,7 @@ using DoItNow.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
@@ -20,7 +21,9 @@ namespace DoItNow.Services
         private readonly SettingsService _settingsService;
 
         public const string GroqEndpoint = "https://api.groq.com/openai/v1/chat/completions";
-        public const string GroqDefaultModel = "llama-3.3-70b-versatile";
+        // Groq retiró llama-3.3-70b-versatile del tier gratuito el 16/08/2026;
+        // openai/gpt-oss-120b es el reemplazo recomendado por Groq.
+        public const string GroqDefaultModel = "openai/gpt-oss-120b";
 
         public OllamaService(SettingsService? settingsService = null)
         {
@@ -262,12 +265,56 @@ namespace DoItNow.Services
                         return content.GetString() ?? string.Empty;
                     }
                 }
-                return $"Error en Groq Cloud ({response.StatusCode}): {await response.Content.ReadAsStringAsync()}";
+                var errorBody = await response.Content.ReadAsStringAsync();
+                return DescribeGroqFailure(response.StatusCode, errorBody);
+            }
+            catch (TaskCanceledException)
+            {
+                return "⌛ Groq tardó demasiado en responder. Inténtalo de nuevo.";
             }
             catch (Exception ex)
             {
-                return $"Error al conectar con Groq Cloud: {ex.Message}";
+                return $"🌐 No pude conectar con Groq Cloud: {ex.Message}";
             }
+        }
+
+        /// <summary>Traduce un fallo de Groq a un mensaje breve y accionable.</summary>
+        private static string DescribeGroqFailure(HttpStatusCode status, string body)
+        {
+            var detail = ExtractGroqErrorMessage(body);
+
+            return status switch
+            {
+                HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden =>
+                    "🔑 Tu API Key de Groq no es válida o no tiene permisos. Revísala en Configuración.",
+                HttpStatusCode.TooManyRequests =>
+                    "⏳ Groq está limitando las solicitudes. Espera unos segundos e inténtalo de nuevo.",
+                HttpStatusCode.NotFound =>
+                    "🧩 El modelo de Groq configurado no está disponible. Revisa los modelos activos en console.groq.com/docs/models.",
+                HttpStatusCode.BadRequest when detail.Contains("model", StringComparison.OrdinalIgnoreCase) =>
+                    "🧩 Groq no reconoce el modelo solicitado. Revisa los modelos activos en console.groq.com/docs/models.",
+                _ => string.IsNullOrWhiteSpace(detail)
+                    ? $"⚠️ Groq no pudo completar la solicitud ({(int)status})."
+                    : $"⚠️ Groq respondió con un error ({(int)status}): {detail}"
+            };
+        }
+
+        /// <summary>Extrae el mensaje legible del JSON de error de Groq, si existe.</summary>
+        private static string ExtractGroqErrorMessage(string body)
+        {
+            try
+            {
+                using var doc = JsonDocument.Parse(body);
+                if (doc.RootElement.TryGetProperty("error", out var error) &&
+                    error.TryGetProperty("message", out var message))
+                    return message.GetString() ?? string.Empty;
+            }
+            catch (JsonException)
+            {
+                // El cuerpo no era JSON: se ignora y se usa el mensaje genérico.
+            }
+
+            return string.Empty;
         }
 
         /// <summary>

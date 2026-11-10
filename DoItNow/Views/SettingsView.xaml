@@ -171,7 +171,7 @@
                                 <TextBlock Text="👁" FontSize="13" VerticalAlignment="Center"/>
                             </Button>
                         </Grid>
-                        <TextBlock Text="Responde a más de 500 palabras/segundo usando Llama 3.3 sin consumir RAM en la máquina del usuario."
+                        <TextBlock Text="Responde a más de 500 palabras/segundo usando GPT-OSS 120B sin consumir RAM en la máquina del usuario."
                                    FontSize="11" Foreground="{DynamicResource TextMutedBrush}"/>
                     </StackPanel>
                 </Border>
