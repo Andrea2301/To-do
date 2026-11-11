@@ -17,6 +17,7 @@ namespace DoItNow
         public MainWindow()
         {
             InitializeComponent();
+            FitToWorkArea();
             DataContext = new MainViewModel();
             SourceInitialized += MainWindow_SourceInitialized;
             Loaded += MainWindow_Loaded;
@@ -32,6 +33,27 @@ namespace DoItNow
         }
 
         #region Entrance animation
+
+        /// <summary>
+        /// Ajusta la ventana al área de trabajo del monitor: mantiene el tamaño de
+        /// diseño cuando cabe y la reduce (con margen) en pantallas más pequeñas,
+        /// para que nunca quede recortada por la barra de tareas ni por el borde.
+        /// </summary>
+        private void FitToWorkArea()
+        {
+            var work = SystemParameters.WorkArea;
+            const double margin = 14;
+
+            // Tamaño de diseño (1280x780) cuando hay espacio; si no, nos ajustamos
+            // al área de trabajo para que la ventana nunca quede recortada.
+            Width = Math.Clamp(work.Width - margin * 2, 900, 1280);
+            Height = Math.Clamp(work.Height - margin * 2, 600, 780);
+
+            // El hook WM_GETMINMAXINFO ya limita el maximizado al área de trabajo.
+            MaxWidth = Math.Max(900, work.Width);
+            MaxHeight = Math.Max(600, work.Height);
+        }
+
 
         private void MainWindow_Loaded(object sender, RoutedEventArgs e)
         {
