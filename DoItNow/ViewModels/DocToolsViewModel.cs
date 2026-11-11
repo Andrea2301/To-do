@@ -2,9 +2,13 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using DoItNow.Models;
 using DoItNow.Services;
+using DoItNow.Services.Conversion;
 using Microsoft.Win32;
 using System;
+using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -14,6 +18,57 @@ namespace DoItNow.ViewModels
     {
         private readonly TaskService _taskService;
         private readonly OllamaService _ollamaService;
+
+        // ---------- Modo Documentos: convertir / extraer ----------
+
+        [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(IsExtractMode))]
+        private bool _isConvertMode = true;
+
+        public bool IsExtractMode => !IsConvertMode;
+
+        // ---------- Convertidor ----------
+
+        public ObservableCollection<ConversionJob> Jobs { get; } = new();
+
+        [ObservableProperty]
+        private ConversionJob? _selectedJob;
+
+        [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(OutputFolderDisplay))]
+        private string _outputFolder = string.Empty;
+
+        [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(OutputFolderDisplay))]
+        private bool _useSourceFolder = true;
+
+        public string OutputFolderDisplay
+            => UseSourceFolder || string.IsNullOrWhiteSpace(OutputFolder)
+                ? "Junto al archivo original"
+                : OutputFolder;
+
+        [ObservableProperty]
+        private string _converterStatus = "Añade archivos para empezar. Nada sale de tu equipo.";
+
+        [ObservableProperty]
+        [NotifyCanExecuteChangedFor(nameof(ConvertAllCommand))]
+        private bool _isConverting;
+
+        [ObservableProperty]
+        private string _previewText = string.Empty;
+
+        [ObservableProperty]
+        private string _previewTitle = "Sin archivo seleccionado";
+
+        [ObservableProperty]
+        private string? _lastOutputFolder;
+
+        public bool HasJobs => Jobs.Count > 0;
+        public bool CanConvert => Jobs.Count > 0 && !IsConverting;
+
+        private bool CanRunConversion() => CanConvert;
+
+        // ---------- Modo extraer tareas (IA) ----------
 
         [ObservableProperty] private string _selectedFilePath = string.Empty;
         [ObservableProperty] private string _fileName = "Ningún archivo seleccionado";
@@ -28,6 +83,242 @@ namespace DoItNow.ViewModels
             _taskService = taskService ?? new TaskService();
             _ollamaService = ollamaService ?? new OllamaService();
         }
+
+        partial void OnSelectedJobChanged(ConversionJob? value)
+        {
+            PreviewTitle = value is null
+                ? "Sin archivo seleccionado"
+                : value.OutputPath is { Length: > 0 } output
+                    ? System.IO.Path.GetFileName(output)
+                    : value.FileName;
+
+            PreviewText = value?.Preview ?? string.Empty;
+        }
+
+        #region Modo
+
+        [RelayCommand]
+        private void ShowConverter()
+        {
+            IsConvertMode = true;
+        }
+
+        [RelayCommand]
+        private void ShowExtractor()
+        {
+            IsConvertMode = false;
+        }
+
+        #endregion
+
+        #region Convertidor: comandos
+
+        [RelayCommand]
+        private void AddFiles()
+        {
+            var dialog = new OpenFileDialog
+            {
+                Title = "Añadir documentos",
+                Filter = DocumentFormats.FileFilter,
+                Multiselect = true
+            };
+
+            if (dialog.ShowDialog() == true)
+                AddFiles(dialog.FileNames);
+        }
+
+        public void AddFiles(IEnumerable<string> paths)
+        {
+            var added = 0;
+            var skipped = new List<string>();
+
+            foreach (var path in paths)
+            {
+                var kind = DocumentFormats.Detect(path);
+
+                if (!DocumentFormats.IsSupported(kind) || !File.Exists(path))
+                {
+                    skipped.Add(Path.GetFileName(path));
+                    continue;
+                }
+
+                if (Jobs.Any(j => string.Equals(j.FullPath, path, StringComparison.OrdinalIgnoreCase)))
+                    continue;
+
+                var job = new ConversionJob(path);
+                Jobs.Add(job);
+                added++;
+            }
+
+            if (added > 0 && SelectedJob is null)
+                SelectedJob = Jobs[0];
+
+            ConverterStatus = Jobs.Count == 0
+                ? "Añade archivos para empezar. Nada sale de tu equipo."
+                : $"{Jobs.Count} archivo{(Jobs.Count == 1 ? "" : "s")} en cola.";
+
+            if (skipped.Count > 0)
+            {
+                ConverterStatus += $" {skipped.Count} omitido{(skipped.Count == 1 ? "" : "s")} " +
+                                   $"({string.Join(", ", skipped.Take(2))}{(skipped.Count > 2 ? "…" : "")}).";
+            }
+
+            OnPropertyChanged(nameof(HasJobs));
+            ConvertAllCommand.NotifyCanExecuteChanged();
+        }
+
+        [RelayCommand]
+        private void RemoveJob(ConversionJob? job)
+        {
+            if (job is null) return;
+
+            Jobs.Remove(job);
+
+            if (SelectedJob == job)
+                SelectedJob = Jobs.FirstOrDefault();
+
+            OnPropertyChanged(nameof(HasJobs));
+            ConvertAllCommand.NotifyCanExecuteChanged();
+
+            ConverterStatus = Jobs.Count == 0
+                ? "Añade archivos para empezar. Nada sale de tu equipo."
+                : $"{Jobs.Count} archivo{(Jobs.Count == 1 ? "" : "s")} en cola.";
+        }
+
+        [RelayCommand]
+        private void ClearJobs()
+        {
+            Jobs.Clear();
+            SelectedJob = null;
+            PreviewText = string.Empty;
+            PreviewTitle = "Sin archivo seleccionado";
+            ConverterStatus = "Añade archivos para empezar. Nada sale de tu equipo.";
+
+            OnPropertyChanged(nameof(HasJobs));
+            ConvertAllCommand.NotifyCanExecuteChanged();
+        }
+
+        [RelayCommand]
+        private void ChooseOutputFolder()
+        {
+            var dialog = new OpenFolderDialog
+            {
+                Title = "Carpeta de destino",
+                Multiselect = false
+            };
+
+            if (UseSourceFolder && SelectedJob is not null)
+            {
+                var folder = Path.GetDirectoryName(SelectedJob.FullPath);
+                if (!string.IsNullOrEmpty(folder)) dialog.InitialDirectory = folder;
+            }
+
+            if (dialog.ShowDialog() == true)
+            {
+                OutputFolder = dialog.FolderName;
+                UseSourceFolder = false;
+            }
+        }
+
+        [RelayCommand]
+        private void ResetOutputFolder()
+        {
+            UseSourceFolder = true;
+            OutputFolder = string.Empty;
+        }
+
+        [RelayCommand(CanExecute = nameof(CanRunConversion))]
+        private async Task ConvertAllAsync()
+        {
+            if (Jobs.Count == 0 || IsConverting) return;
+
+            IsConverting = true;
+            var converted = 0;
+            var failed = 0;
+
+            try
+            {
+                foreach (var job in Jobs)
+                {
+                    if (job.SelectedTarget is null) continue;
+
+                    job.IsBusy = true;
+                    job.IsError = false;
+                    job.IsDone = false;
+                    job.Status = "Convirtiendo…";
+                    ConverterStatus = $"Convirtiendo {job.FileName}…";
+
+                    try
+                    {
+                        var result = await DocumentConverter.ConvertAsync(
+                            job.FullPath,
+                            job.SelectedTarget,
+                            UseSourceFolder ? null : OutputFolder);
+
+                        job.OutputPath = result.OutputPath;
+                        job.Preview = result.Preview;
+                        job.IsDone = true;
+                        job.Status = "Listo";
+                        LastOutputFolder = Path.GetDirectoryName(result.OutputPath);
+
+                        if (SelectedJob == job)
+                        {
+                            PreviewText = result.Preview;
+                            PreviewTitle = Path.GetFileName(result.OutputPath);
+                        }
+
+                        converted++;
+                    }
+                    catch (Exception ex)
+                    {
+                        job.IsError = true;
+                        job.Status = ex.Message;
+                        failed++;
+                    }
+                    finally
+                    {
+                        job.IsBusy = false;
+                    }
+                }
+
+                ConverterStatus = failed == 0
+                    ? $"{converted} archivo{(converted == 1 ? "" : "s")} convertido{(converted == 1 ? "" : "s")}."
+                    : $"{converted} convertido{(converted == 1 ? "" : "s")} · {failed} con error.";
+
+                if (converted > 0)
+                    ToastService.Info(ConverterStatus, "Conversión completada");
+            }
+            finally
+            {
+                IsConverting = false;
+                ConvertAllCommand.NotifyCanExecuteChanged();
+            }
+        }
+
+        [RelayCommand]
+        private void OpenOutputFolder()
+        {
+            var folder = LastOutputFolder
+                         ?? (UseSourceFolder ? null : OutputFolder)
+                         ?? (SelectedJob is not null ? Path.GetDirectoryName(SelectedJob.FullPath) : null);
+
+            if (string.IsNullOrEmpty(folder) || !Directory.Exists(folder)) return;
+
+            Process.Start(new ProcessStartInfo { FileName = folder, UseShellExecute = true });
+        }
+
+        [RelayCommand]
+        private void OpenSelectedOutput()
+        {
+            var path = SelectedJob?.OutputPath;
+            if (string.IsNullOrEmpty(path) || !File.Exists(path)) return;
+
+            Process.Start(new ProcessStartInfo { FileName = path, UseShellExecute = true });
+        }
+
+        #endregion
+
+        #region Extraer tareas (IA)
 
         [RelayCommand]
         public void SelectFile()
@@ -59,7 +350,7 @@ namespace DoItNow.ViewModels
             }
             catch (Exception ex)
             {
-                StatusMessage = $"❌ Error al leer archivo: {ex.Message}";
+                StatusMessage = $"⚠ Error al leer archivo: {ex.Message}";
             }
         }
 
@@ -68,12 +359,12 @@ namespace DoItNow.ViewModels
         {
             if (string.IsNullOrWhiteSpace(ExtractedText))
             {
-                StatusMessage = "⚠️ Primero debes cargar un archivo o pegar texto.";
+                StatusMessage = "⚠ Primero debes cargar un archivo o pegar texto.";
                 return;
             }
 
             IsProcessing = true;
-            StatusMessage = "🤖 La IA está analizando el documento y extrayendo tareas pendientes...";
+            StatusMessage = "La IA está analizando el documento y extrayendo tareas pendientes…";
 
             try
             {
@@ -84,7 +375,7 @@ namespace DoItNow.ViewModels
 
                 var summary = await _ollamaService.BreakdownTaskAsync("Extracción de documento: " + FileName, prompt);
 
-                int countAdded = 0;
+                var countAdded = 0;
                 foreach (var item in summary)
                 {
                     if (string.IsNullOrWhiteSpace(item)) continue;
@@ -110,12 +401,12 @@ namespace DoItNow.ViewModels
                 }
 
                 StatusMessage = countAdded > 0
-                    ? $"🎉 ¡Éxito! Se crearon {countAdded} tareas automáticamente en tu lista."
-                    : "ℹ️ La IA analizó el texto pero no encontró tareas explícitas.";
+                    ? $"✓ Se crearon {countAdded} tareas automáticamente en tu lista."
+                    : "La IA analizó el texto pero no encontró tareas explícitas.";
             }
             catch (Exception ex)
             {
-                StatusMessage = $"❌ Error de IA: {ex.Message}";
+                StatusMessage = $"⚠ Error de IA: {ex.Message}";
             }
             finally
             {
@@ -132,5 +423,7 @@ namespace DoItNow.ViewModels
             WordCount = 0;
             StatusMessage = "Selecciona o arrastra un archivo de texto o notas para procesar.";
         }
+
+        #endregion
     }
 }

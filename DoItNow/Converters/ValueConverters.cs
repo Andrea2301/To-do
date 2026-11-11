@@ -372,6 +372,36 @@ namespace DoItNow.Converters
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
             => throw new NotImplementedException();
     }
+
+    /// <summary>
+    /// Color del chip de tipo de archivo en la cola del convertidor.
+    /// Usa colores propios del formato (legibles con texto blanco en cualquier tema).
+    /// </summary>
+    public class FileKindToBrushConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            var extension = value?.ToString()?.ToUpperInvariant() ?? string.Empty;
+
+            var color = extension switch
+            {
+                "PDF" => Color.FromRgb(214, 69, 56),
+                "DOCX" or "DOCM" or "DOC" => Color.FromRgb(43, 87, 154),
+                "XLSX" or "XLSM" or "XLS" => Color.FromRgb(33, 115, 70),
+                "CSV" or "TSV" => Color.FromRgb(31, 141, 108),
+                "JSON" => Color.FromRgb(148, 112, 39),
+                "MD" or "MARKDOWN" => Color.FromRgb(79, 91, 120),
+                "HTML" or "HTM" => Color.FromRgb(201, 96, 42),
+                "TXT" or "LOG" => Color.FromRgb(109, 92, 231),
+                _ => Color.FromRgb(110, 116, 133)
+            };
+
+            return new SolidColorBrush(color);
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+            => throw new NotImplementedException();
+    }
 }
 
 

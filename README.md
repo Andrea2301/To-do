@@ -44,6 +44,9 @@ screenshots.
 - **Hybrid AI workspace** — local [Ollama](https://ollama.com) inference with automatic
   fallback to [Groq Cloud](https://console.groq.com), in one place: a conversational
   assistant and a document mode that turns notes or text files into actionable tasks.
+- **Offline document conversion** — convert PDF, Word, Excel, CSV, JSON, Markdown and
+  plain text entirely on your machine. Batch queue, drag and drop, live preview and a
+  configurable destination folder. No uploads, no accounts, no third-party services.
 - **Encrypted key vault** — store API keys, tokens and passwords protected with
   AES-256-GCM. Optional master password (PBKDF2-SHA256) or transparent protection via
   Windows DPAPI; secrets stay masked until you reveal them.
@@ -84,8 +87,12 @@ One module with two modes, switched from a segmented control at the top:
 
 - **Chat** — the assistant prefers a local Ollama model and falls back to Groq Cloud when
   the local server is unavailable. Responses are stored per conversation in SQLite.
-- **Documents** — load a text-like document, preview it, and ask the active AI provider
-  to extract tasks or summarize its content.
+- **Documents** — two tools in one place:
+  - **Convert** — turn PDF, Word, Excel, CSV, JSON, Markdown and plain text into other
+    formats without leaving your machine. Queue several files, drag and drop them,
+    preview the result and choose the destination folder. Nothing is uploaded.
+  - **Extract tasks** — load a text-like document, preview it, and ask the active AI
+    provider to extract tasks or summarize its content.
 
 ### Code notes
 
