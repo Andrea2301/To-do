@@ -77,8 +77,10 @@ work.
 
 ### Task management
 
-Search, category pills, priority colors, inline edit/delete, and a collapsible creation
-form. Completing a task updates the dashboard metrics and raises a toast in real time.
+Search, a compact category filter next to the search box, priority colors, inline
+edit/delete, and a collapsible creation form. Cards stay minimal: the only category cue
+is a small icon in the footer. Completing a task updates the dashboard metrics and raises
+a toast in real time.
 
 ### AI workspace
 

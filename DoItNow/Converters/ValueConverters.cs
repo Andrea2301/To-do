@@ -116,6 +116,23 @@ namespace DoItNow.Converters
             => throw new NotImplementedException();
     }
 
+    /// <summary>Mapea TaskCategory a un icono vectorial (FontAwesome.Sharp).</summary>
+    public class CategoryToIconGlyphConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+            => value is TaskCategory c ? c switch
+            {
+                TaskCategory.Work => FontAwesome.Sharp.IconChar.Briefcase,
+                TaskCategory.Health => FontAwesome.Sharp.IconChar.HeartPulse,
+                TaskCategory.Study => FontAwesome.Sharp.IconChar.Book,
+                TaskCategory.Personal => FontAwesome.Sharp.IconChar.User,
+                _ => FontAwesome.Sharp.IconChar.Tag
+            } : FontAwesome.Sharp.IconChar.Tag;
+
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+            => throw new NotImplementedException();
+    }
+
     /// <summary>Tachado de texto para tareas completadas.</summary>
     public class BoolToStrikethroughConverter : IValueConverter
     {
@@ -340,7 +357,7 @@ namespace DoItNow.Converters
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
             return CategoryFilterState.IsActive(value, parameter)
-                ? ThemeResources.Brush("PrimaryBrush", Color.FromRgb(32, 33, 58))
+                ? ThemeResources.Brush("AccentBrush", Color.FromRgb(210, 245, 107))
                 : ThemeResources.Brush("SurfaceHoverBrush", Color.FromRgb(232, 233, 244));
         }
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
@@ -353,7 +370,7 @@ namespace DoItNow.Converters
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
             return CategoryFilterState.IsActive(value, parameter)
-                ? ThemeResources.Brush("TextOnDarkBrush", Colors.White)
+                ? ThemeResources.Brush("AccentInkDeepBrush", Color.FromRgb(22, 32, 40))
                 : ThemeResources.Brush("TextOnMutedBrush", Color.FromRgb(69, 100, 127));
         }
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)

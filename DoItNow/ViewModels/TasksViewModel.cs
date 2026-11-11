@@ -37,6 +37,23 @@ namespace DoItNow.ViewModels
         [ObservableProperty] private TaskCategory? _selectedCategoryFilter;
         [ObservableProperty] private DateTime? _selectedDateFilter;
 
+        /// <summary>Opción del selector de categorías (incluye "Todas").</summary>
+        public sealed record CategoryFilterOption(string Label, TaskCategory? Value);
+
+        public IReadOnlyList<CategoryFilterOption> CategoryFilterOptions { get; } = new[]
+        {
+            new CategoryFilterOption("Todas", null),
+            new CategoryFilterOption("Trabajo", TaskCategory.Work),
+            new CategoryFilterOption("Salud", TaskCategory.Health),
+            new CategoryFilterOption("Estudio", TaskCategory.Study),
+            new CategoryFilterOption("Personal", TaskCategory.Personal),
+            new CategoryFilterOption("Otros", TaskCategory.Other)
+        };
+
+        [ObservableProperty] private CategoryFilterOption _selectedCategoryOption;
+
+        private bool _syncingCategoryFilter;
+
         // Listas para los ComboBox
         public IEnumerable<Priority> Priorities => Enum.GetValues<Priority>();
         public IEnumerable<TaskCategory> Categories => Enum.GetValues<TaskCategory>();
@@ -44,12 +61,34 @@ namespace DoItNow.ViewModels
         public TasksViewModel(TaskService taskService)
         {
             _taskService = taskService;
+            _selectedCategoryOption = CategoryFilterOptions[0];
             _ = LoadTasksAsync();
         }
 
         partial void OnSearchTextChanged(string value) => ApplyFilter();
-        partial void OnSelectedCategoryFilterChanged(TaskCategory? value) => ApplyFilter();
         partial void OnSelectedDateFilterChanged(DateTime? value) => ApplyFilter();
+
+        partial void OnSelectedCategoryOptionChanged(CategoryFilterOption value)
+        {
+            if (_syncingCategoryFilter) return;
+
+            _syncingCategoryFilter = true;
+            SelectedCategoryFilter = value?.Value;
+            _syncingCategoryFilter = false;
+        }
+
+        partial void OnSelectedCategoryFilterChanged(TaskCategory? value)
+        {
+            if (!_syncingCategoryFilter)
+            {
+                _syncingCategoryFilter = true;
+                SelectedCategoryOption = CategoryFilterOptions
+                    .FirstOrDefault(o => o.Value == value) ?? CategoryFilterOptions[0];
+                _syncingCategoryFilter = false;
+            }
+
+            ApplyFilter();
+        }
 
         public async Task LoadTasksAsync()
         {
