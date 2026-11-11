@@ -10,6 +10,7 @@
         AllowsTransparency="True"
         Background="{x:Null}"
         WindowStartupLocation="CenterScreen"
+        PreviewKeyDown="MainWindow_PreviewKeyDown"
         MouseLeftButtonDown="Window_MouseLeftButtonDown">
 
     <Window.Resources>
@@ -372,6 +373,21 @@
                 </Grid>
             </Border>
         </DataTemplate>
+
+        <!-- Velo de arranque: tres puntos que laten mientras se prepara la sesión. -->
+        <Storyboard x:Key="BootDots" RepeatBehavior="Forever" AutoReverse="True">
+            <DoubleAnimation Storyboard.TargetName="BootDot1"
+                             Storyboard.TargetProperty="Opacity"
+                             From="0.25" To="1" Duration="0:0:0.45"/>
+            <DoubleAnimation Storyboard.TargetName="BootDot2"
+                             Storyboard.TargetProperty="Opacity"
+                             From="0.25" To="1" Duration="0:0:0.45"
+                             BeginTime="0:0:0.15"/>
+            <DoubleAnimation Storyboard.TargetName="BootDot3"
+                             Storyboard.TargetProperty="Opacity"
+                             From="0.25" To="1" Duration="0:0:0.45"
+                             BeginTime="0:0:0.30"/>
+        </Storyboard>
     </Window.Resources>
 
     <!-- ========== VENTANA PRINCIPAL (ESTILO TIMEFRAME CLONE) ========== -->
@@ -1777,6 +1793,63 @@
                 </StackPanel>
             </Grid>
         </Border>
+
+        <!-- ======================================================== -->
+        <!-- VELO DE ARRANQUE (se desvanece solo en ~0.8 s)           -->
+        <!-- ======================================================== -->
+        <Grid x:Name="BootVeil" Grid.RowSpan="2" Panel.ZIndex="200"
+              Background="{DynamicResource AppBackgroundBrush}"
+              MouseLeftButtonDown="BootVeil_MouseDown">
+            <Border Width="330" Padding="30,28" CornerRadius="26"
+                    HorizontalAlignment="Center" VerticalAlignment="Center"
+                    Background="{DynamicResource SurfaceBrush}"
+                    BorderBrush="{DynamicResource BorderSoftBrush}" BorderThickness="1">
+                <Border.Effect>
+                    <DropShadowEffect BlurRadius="34" ShadowDepth="6" Opacity="0.20"
+                                      Color="{DynamicResource WindowShadowColor}"/>
+                </Border.Effect>
+
+                <StackPanel HorizontalAlignment="Center">
+                    <!-- Marca de la app: anillos concéntricos -->
+                    <Grid Width="78" Height="78" HorizontalAlignment="Center"
+                          RenderTransformOrigin="0.5,0.5">
+                        <Grid.Triggers>
+                            <EventTrigger RoutedEvent="Loaded">
+                                <BeginStoryboard>
+                                    <Storyboard RepeatBehavior="Forever">
+                                        <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                                                         From="0.75" To="0.95" Duration="0:0:1.1"
+                                                         AutoReverse="True"/>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </EventTrigger>
+                        </Grid.Triggers>
+                        <Ellipse Width="78" Height="78" Stroke="{DynamicResource AccentSoftBrush}"
+                                 StrokeThickness="2" Opacity="0.55"/>
+                        <Ellipse Width="56" Height="56" Stroke="{DynamicResource AccentBrush}"
+                                 StrokeThickness="2" Opacity="0.85"/>
+                        <Ellipse Width="30" Height="30" Fill="{DynamicResource AccentBrush}"/>
+                        <Ellipse Width="12" Height="12" Fill="{DynamicResource SurfaceBrush}"/>
+                    </Grid>
+
+                    <TextBlock Text="DoItNow" FontSize="20" FontWeight="Bold"
+                               Foreground="{DynamicResource TextPrimaryBrush}"
+                               HorizontalAlignment="Center" Margin="0,20,0,4"/>
+                    <TextBlock Text="Preparando tu espacio…" FontSize="11"
+                               Foreground="{DynamicResource TextSubtleBrush}"
+                               HorizontalAlignment="Center"/>
+
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,18,0,0">
+                        <Ellipse x:Name="BootDot1" Width="8" Height="8" Margin="4,0"
+                                 Fill="{DynamicResource AccentBrush}"/>
+                        <Ellipse x:Name="BootDot2" Width="8" Height="8" Margin="4,0"
+                                 Fill="{DynamicResource AccentBrush}"/>
+                        <Ellipse x:Name="BootDot3" Width="8" Height="8" Margin="4,0"
+                                 Fill="{DynamicResource AccentBrush}"/>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+        </Grid>
     </Grid>
 </Border>
 </Window>

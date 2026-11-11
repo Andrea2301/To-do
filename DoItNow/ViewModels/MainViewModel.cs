@@ -57,6 +57,7 @@ namespace DoItNow.ViewModels
 
         private readonly DispatcherTimer _clockTimer;
         private bool _syncingTheme;
+        private bool _suppressSectionPersistence = true;
 
         public MainViewModel()
         {
@@ -129,6 +130,12 @@ namespace DoItNow.ViewModels
             if (!string.IsNullOrWhiteSpace(sectionArg))
             {
                 ApplyStartupSection(sectionArg.Substring("--section=".Length));
+                _suppressSectionPersistence = false;
+            }
+            else
+            {
+                // Reabre el módulo donde se quedó la última vez (sin bloquear el arranque).
+                _ = RestoreLastSectionAsync();
             }
 
             // Datos de demostración para capturas reproducibles: --demo
@@ -169,6 +176,60 @@ namespace DoItNow.ViewModels
                 $"Tema {value.DisplayName} activado",
                 "Tema actualizado");
         }
+
+        #region Persistencia de navegación
+
+        /// <summary>Reabre el módulo que estaba activo en la última sesión.</summary>
+        private async Task RestoreLastSectionAsync()
+        {
+            try
+            {
+                var stored = await _settingsService.GetSettingAsync(SettingsService.KeyLastSection, string.Empty);
+
+                if (!string.IsNullOrWhiteSpace(stored))
+                {
+                    var parts = stored.Split('|', 2);
+
+                    if (parts[0].Equals("Ai", StringComparison.OrdinalIgnoreCase))
+                    {
+                        var mode = parts.Length > 1 ? parts[1] : "Chat";
+                        NavigateToAi(mode);
+                    }
+                    else
+                    {
+                        ApplyStartupSection(parts[0]);
+                    }
+                }
+            }
+            catch (Exception)
+            {
+                // Si falla la lectura, se queda en el Dashboard por defecto.
+            }
+            finally
+            {
+                _suppressSectionPersistence = false;
+            }
+        }
+
+        partial void OnActiveSectionChanged(string value) => PersistLastSection();
+
+        partial void OnAiModeChanged(string value)
+        {
+            if (ActiveSection == "Ai") PersistLastSection();
+        }
+
+        private void PersistLastSection()
+        {
+            if (_suppressSectionPersistence) return;
+
+            var value = ActiveSection == "Ai" ? $"Ai|{AiMode}" : ActiveSection;
+            _ = _settingsService.SetSettingAsync(
+                SettingsService.KeyLastSection,
+                value,
+                "Última sección abierta");
+        }
+
+        #endregion
 
         private void UpdateFormattedSelectedDate()
         {

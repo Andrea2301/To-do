@@ -55,8 +55,10 @@ screenshots.
   and Markdown, clipboard-aware pasting and file export.
 - **Portable encrypted backup** — export the vault to a password-protected
   `.ditvault` file and import it on another machine. No cloud account required.
-- **Micro-interactions** — section transitions, hover-lift cards, animated toasts and
-  a window entrance animation.
+- **Micro-interactions** — section transitions, hover-lift cards, animated toasts,
+  a window entrance animation and a theme-aware startup veil that never delays loading.
+- **Session restore** — reopens the last visited module (including the AI Chat/Documents
+  sub-mode) and restores the window size, position and maximized state on launch.
 - **Local-first** — all data lives in a local SQLite database; no account required.
 - **Portfolio-ready demo mode** — one flag loads curated tasks and a sample AI
   conversation, so screenshots are always reproducible.

@@ -15,6 +15,8 @@ namespace DoItNow.Services
         public const string KeyGroqApiKey = "Groq_ApiKey";
         public const string KeyAiProvider = "Ai_Provider"; // "Auto", "Ollama", "Groq"
         public const string KeyTheme = "App_Theme";
+        public const string KeyLastSection = "App_LastSection";
+        public const string KeyWindowPlacement = "App_WindowPlacement";
 
         private static readonly string AppSettingsPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "appsettings.json");
 
