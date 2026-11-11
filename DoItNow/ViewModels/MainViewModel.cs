@@ -80,6 +80,7 @@ namespace DoItNow.ViewModels
             Tasks.TaskChanged += async () =>
             {
                 await Dashboard.LoadStatsAsync();
+                await Calendar.LoadDayTasksAsync();
             };
 
             // Al cargar datos demo desde Configuración, refrescamos agenda y métricas.
@@ -87,6 +88,7 @@ namespace DoItNow.ViewModels
             {
                 await Tasks.RefreshAsync();
                 await Dashboard.LoadStatsAsync();
+                await Calendar.LoadDayTasksAsync();
             };
 
             // El timeline del dashboard muestra el día seleccionado.

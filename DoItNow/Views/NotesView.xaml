@@ -144,11 +144,10 @@
                     <Grid Width="210" Margin="0,0,8,0">
                         <TextBox Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
                                  Style="{StaticResource NoteTextBox}" Padding="10,7"/>
-                        <TextBlock Text="🔎 Buscar notas..." FontSize="11"
-                                   Foreground="{DynamicResource TextMutedBrush}"
-                                   Margin="11,0,0,0" VerticalAlignment="Center" IsHitTestVisible="False">
-                            <TextBlock.Style>
-                                <Style TargetType="TextBlock">
+                        <StackPanel Orientation="Horizontal" Margin="11,0,0,0"
+                                    VerticalAlignment="Center" IsHitTestVisible="False">
+                            <StackPanel.Style>
+                                <Style TargetType="StackPanel">
                                     <Setter Property="Visibility" Value="Collapsed"/>
                                     <Style.Triggers>
                                         <DataTrigger Binding="{Binding SearchText}" Value="">
@@ -156,8 +155,13 @@
                                         </DataTrigger>
                                     </Style.Triggers>
                                 </Style>
-                            </TextBlock.Style>
-                        </TextBlock>
+                            </StackPanel.Style>
+                            <fa:IconImage Icon="Search" Width="10" Height="10"
+                                          Foreground="{DynamicResource TextMutedBrush}"
+                                          VerticalAlignment="Center" Margin="0,0,6,0"/>
+                            <TextBlock Text="Buscar notas..." FontSize="11"
+                                       Foreground="{DynamicResource TextMutedBrush}"/>
+                        </StackPanel>
                     </Grid>
                     <Button Command="{Binding NewNoteCommand}" Style="{StaticResource NotePrimaryButton}"
                             Content="+ Nueva nota" Padding="14,8"/>

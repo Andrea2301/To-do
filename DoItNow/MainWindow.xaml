@@ -33,6 +33,7 @@
         <conv:CategoryFilterBackgroundConverter x:Key="CatFilterBg"/>
         <conv:CategoryFilterForegroundConverter x:Key="CatFilterFg"/>
         <conv:StringEqualsToForegroundConverter x:Key="StrEqFg"/>
+        <conv:PluralizeConverter x:Key="Pluralize"/>
 
         <!-- Pill Nav Button Style -->
         <Style x:Key="RailCircleButton" TargetType="Button">
@@ -318,6 +319,59 @@
                 </Setter.Value>
             </Setter>
         </Style>
+
+        <!-- Fila de tarea futura: la usan el dashboard y el calendario -->
+        <DataTemplate x:Key="UpcomingTaskRow">
+            <Border Background="{DynamicResource SurfaceBrush}" CornerRadius="12"
+                    Padding="12,9" Margin="0,0,0,8" VerticalAlignment="Top"
+                    Style="{StaticResource HoverLiftCard}">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <Border Grid.Column="0" Background="{DynamicResource SurfaceMutedBrush}"
+                            CornerRadius="10" Padding="8,3" Margin="0,0,12,0"
+                            VerticalAlignment="Center" MinWidth="42">
+                        <StackPanel>
+                            <TextBlock Text="{Binding DueDate, StringFormat='{}{0:dd}'}"
+                                       FontSize="14" FontWeight="Bold"
+                                       Foreground="{DynamicResource TextPrimaryBrush}"
+                                       HorizontalAlignment="Center"/>
+                            <TextBlock Text="{Binding DueDate, StringFormat='{}{0:MMM}'}"
+                                       FontSize="9" FontWeight="SemiBold"
+                                       Foreground="{DynamicResource TextMutedStrongBrush}"
+                                       HorizontalAlignment="Center"/>
+                        </StackPanel>
+                    </Border>
+
+                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                        <TextBlock Text="{Binding Title}" FontSize="12" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource TextPrimaryBrush}"
+                                   TextTrimming="CharacterEllipsis"/>
+                        <StackPanel Orientation="Horizontal" Margin="0,2,0,0">
+                            <TextBlock Text="{Binding Category, Converter={StaticResource CatIcon}}"
+                                       FontSize="9" Margin="0,0,4,0"/>
+                            <TextBlock Text="{Binding Category, Converter={StaticResource CatLabel}}"
+                                       FontSize="9" Foreground="{DynamicResource TextMutedStrongBrush}"/>
+                            <TextBlock Text="  ·  " FontSize="9"
+                                       Foreground="{DynamicResource TextSubtleBrush}"/>
+                            <TextBlock Text="{Binding DurationLabel}" FontSize="9"
+                                       Foreground="{DynamicResource TextMutedBrush}"/>
+                        </StackPanel>
+                    </StackPanel>
+
+                    <Border Grid.Column="2" Background="{Binding Priority, Converter={StaticResource PriorityCardBrush}}"
+                            CornerRadius="8" Padding="8,3" VerticalAlignment="Center">
+                        <TextBlock Text="{Binding Priority, Converter={StaticResource PriorityLabel}}"
+                                   FontSize="9" FontWeight="SemiBold"
+                                   Foreground="{Binding Priority, Converter={StaticResource PriorityCardFg}}"/>
+                    </Border>
+                </Grid>
+            </Border>
+        </DataTemplate>
     </Window.Resources>
 
     <!-- ========== VENTANA PRINCIPAL (ESTILO TIMEFRAME CLONE) ========== -->
@@ -532,7 +586,7 @@
                                     <Grid Margin="0,0,0,10">
                                         <TextBlock Text="Agenda del día" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
                                         <Border HorizontalAlignment="Right" Background="{DynamicResource SurfaceMutedBrush}" CornerRadius="10" Padding="8,3">
-                                            <TextBlock Text="{Binding Tasks.FilteredTasks.Count, StringFormat='{}{0} tareas'}"
+                                            <TextBlock Text="{Binding Tasks.FilteredTasks.Count, Converter={StaticResource Pluralize}, ConverterParameter='tarea|tareas'}"
                                                        FontSize="10" FontWeight="SemiBold" Foreground="{DynamicResource TextMutedStrongBrush}"/>
                                         </Border>
                                     </Grid>
@@ -713,12 +767,10 @@
                                         <TextBox Text="{Binding Tasks.SearchText, UpdateSourceTrigger=PropertyChanged}"
                                                  Style="{StaticResource CleanTextBox}"
                                                  ToolTip="Buscar tareas..."/>
-                                        <TextBlock Text="🔎 Buscar tareas..."
-                                                   FontSize="12" Foreground="{DynamicResource TextMutedBrush}"
-                                                   Margin="11,0,0,0" VerticalAlignment="Center"
-                                                   IsHitTestVisible="False">
-                                            <TextBlock.Style>
-                                                <Style TargetType="TextBlock">
+                                        <StackPanel Orientation="Horizontal" Margin="11,0,0,0"
+                                                    VerticalAlignment="Center" IsHitTestVisible="False">
+                                            <StackPanel.Style>
+                                                <Style TargetType="StackPanel">
                                                     <Setter Property="Visibility" Value="Collapsed"/>
                                                     <Style.Triggers>
                                                         <DataTrigger Binding="{Binding Tasks.SearchText}" Value="">
@@ -726,8 +778,13 @@
                                                         </DataTrigger>
                                                     </Style.Triggers>
                                                 </Style>
-                                            </TextBlock.Style>
-                                        </TextBlock>
+                                            </StackPanel.Style>
+                                            <fa:IconImage Icon="Search" Width="10" Height="10"
+                                                          Foreground="{DynamicResource TextMutedBrush}"
+                                                          VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                            <TextBlock Text="Buscar tareas..." FontSize="12"
+                                                       Foreground="{DynamicResource TextMutedBrush}"/>
+                                        </StackPanel>
                                     </Grid>
                                 </StackPanel>
 
@@ -821,9 +878,10 @@
                                 </Grid>
                             </Border>
 
-                            <!-- Timeline: real week strip + plan del día -->
+                            <!-- Timeline: real week strip + plan del día + próximas -->
                             <Grid Grid.Row="2">
                                 <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
                                     <RowDefinition Height="Auto"/>
                                     <RowDefinition Height="*"/>
                                 </Grid.RowDefinitions>
@@ -868,7 +926,7 @@
                                 </Grid>
 
                                 <!-- Plan del día -->
-                                <Border Grid.Row="1" Background="{DynamicResource SurfaceAltBrush}" CornerRadius="18" Padding="16,12">
+                                <Border Grid.Row="1" Background="{DynamicResource SurfaceAltBrush}" CornerRadius="18" Padding="16,12" Margin="0,0,0,10">
                                     <Grid>
                                         <Grid.RowDefinitions>
                                             <RowDefinition Height="Auto"/>
@@ -883,13 +941,13 @@
                                             </StackPanel>
                                             <Border HorizontalAlignment="Right" Background="{DynamicResource SurfaceMutedBrush}"
                                                     CornerRadius="9" Padding="8,2">
-                                                <TextBlock Text="{Binding Tasks.FilteredTasks.Count, StringFormat='{}{0} tareas'}"
+                                                <TextBlock Text="{Binding Tasks.FilteredTasks.Count, Converter={StaticResource Pluralize}, ConverterParameter='tarea|tareas'}"
                                                            FontSize="9" FontWeight="SemiBold"
                                                            Foreground="{DynamicResource TextMutedStrongBrush}"/>
                                             </Border>
                                         </Grid>
 
-                                        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                                        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" MaxHeight="250">
                                             <ItemsControl ItemsSource="{Binding Tasks.FilteredTasks}">
                                                 <ItemsControl.ItemsPanel>
                                                     <ItemsPanelTemplate>
@@ -976,6 +1034,49 @@
                                         </StackPanel>
                                     </Grid>
                                 </Border>
+
+                                <!-- Próximas tareas -->
+                                <Border Grid.Row="2" Background="{DynamicResource SurfaceAltBrush}" CornerRadius="18" Padding="16,12">
+                                    <Grid>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="*"/>
+                                        </Grid.RowDefinitions>
+
+                                        <Grid Grid.Row="0" Margin="0,0,0,8">
+                                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                <Ellipse Width="7" Height="7" Fill="{DynamicResource AccentBrush}" Margin="0,0,8,0"/>
+                                                <TextBlock Text="PRÓXIMAS" FontSize="10" FontWeight="Bold"
+                                                           Foreground="{DynamicResource TextSecondaryBrush}" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                            <Border HorizontalAlignment="Right" Background="{DynamicResource SurfaceMutedBrush}"
+                                                    CornerRadius="9" Padding="8,2">
+                                                <TextBlock Text="{Binding Dashboard.UpcomingTasks.Count, Converter={StaticResource Pluralize}, ConverterParameter='pendiente|pendientes'}"
+                                                           FontSize="9" FontWeight="SemiBold"
+                                                           Foreground="{DynamicResource TextMutedStrongBrush}"/>
+                                            </Border>
+                                        </Grid>
+
+                                        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                                            <ItemsControl ItemsSource="{Binding Dashboard.UpcomingTasks}"
+                                                          ItemTemplate="{StaticResource UpcomingTaskRow}"/>
+                                        </ScrollViewer>
+
+                                        <!-- Estado vacío -->
+                                        <StackPanel Grid.Row="1" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                    Visibility="{Binding Dashboard.HasUpcomingTasks, Converter={StaticResource InvBoolToVis}}"
+                                                    Margin="0,16,0,16">
+                                            <fa:IconImage Icon="Leaf" Width="22" Height="22"
+                                                          Foreground="{DynamicResource TextSubtleBrush}"
+                                                          HorizontalAlignment="Center" Margin="0,0,0,8"/>
+                                            <TextBlock Text="Sin pendientes próximos" FontSize="12" FontWeight="SemiBold"
+                                                       Foreground="{DynamicResource TextSecondaryBrush}" HorizontalAlignment="Center"/>
+                                            <TextBlock Text="Tu agenda está al día." FontSize="10"
+                                                       Foreground="{DynamicResource TextMutedBrush}"
+                                                       HorizontalAlignment="Center" Margin="0,2,0,0"/>
+                                        </StackPanel>
+                                    </Grid>
+                                </Border>
                             </Grid>
                         </Grid>
                     </Border>
@@ -1008,7 +1109,7 @@
                                     <TextBlock Text="Mis Tareas" FontSize="20" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
                                     <Border Background="{DynamicResource SurfaceMutedBrush}" CornerRadius="9" Padding="8,2"
                                             Margin="10,0,0,0" VerticalAlignment="Center">
-                                        <TextBlock Text="{Binding Tasks.FilteredTasks.Count, StringFormat='{}{0} tareas'}"
+                                        <TextBlock Text="{Binding Tasks.FilteredTasks.Count, Converter={StaticResource Pluralize}, ConverterParameter='tarea|tareas'}"
                                                    FontSize="10" FontWeight="SemiBold"
                                                    Foreground="{DynamicResource TextMutedStrongBrush}"/>
                                     </Border>
@@ -1023,12 +1124,10 @@
                                     <TextBox Text="{Binding Tasks.SearchText, UpdateSourceTrigger=PropertyChanged}"
                                              Style="{StaticResource CleanTextBox}"
                                              Padding="12,7" ToolTip="Buscar tareas por título o descripción..."/>
-                                    <TextBlock Text="🔎 Buscar tareas..."
-                                               FontSize="12" Foreground="{DynamicResource TextMutedBrush}"
-                                               Margin="12,0,0,0" VerticalAlignment="Center"
-                                               IsHitTestVisible="False">
-                                        <TextBlock.Style>
-                                            <Style TargetType="TextBlock">
+                                    <StackPanel Orientation="Horizontal" Margin="12,0,0,0"
+                                                VerticalAlignment="Center" IsHitTestVisible="False">
+                                        <StackPanel.Style>
+                                            <Style TargetType="StackPanel">
                                                 <Setter Property="Visibility" Value="Collapsed"/>
                                                 <Style.Triggers>
                                                     <DataTrigger Binding="{Binding Tasks.SearchText}" Value="">
@@ -1036,8 +1135,13 @@
                                                     </DataTrigger>
                                                 </Style.Triggers>
                                             </Style>
-                                        </TextBlock.Style>
-                                    </TextBlock>
+                                        </StackPanel.Style>
+                                        <fa:IconImage Icon="Search" Width="11" Height="11"
+                                                      Foreground="{DynamicResource TextMutedBrush}"
+                                                      VerticalAlignment="Center" Margin="0,0,7,0"/>
+                                        <TextBlock Text="Buscar tareas..." FontSize="12"
+                                                   Foreground="{DynamicResource TextMutedBrush}"/>
+                                    </StackPanel>
                                 </Grid>
                             </StackPanel>
 
@@ -1403,14 +1507,19 @@
 
                         <!-- Dos Columnas: Calendario mensual y Tareas del día -->
                         <Grid Grid.Row="1">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="340"/>
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
 
                             <!-- Izquierda: Calendario mensual interactivo -->
-                            <Border Grid.Column="0" Background="{DynamicResource SurfaceAltBrush}" CornerRadius="18" Padding="16" Margin="0,0,16,0">
-                                <StackPanel HorizontalAlignment="Center">
+                            <Border Grid.Row="0" Grid.Column="0" Background="{DynamicResource CalendarPanelBrush}" CornerRadius="18" Padding="16"
+                                    Margin="0,0,16,0" VerticalAlignment="Top">
+                                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
                                     <Calendar Style="{StaticResource calendarStyle}"
                                               SelectedDate="{Binding Calendar.SelectedDate, Mode=TwoWay}"
                                               HorizontalAlignment="Center"/>
@@ -1418,14 +1527,37 @@
                             </Border>
 
                             <!-- Derecha: Tareas programadas para este día -->
-                            <Border Grid.Column="1" Background="{DynamicResource SurfaceAltBrush}" CornerRadius="18" Padding="20">
+                            <Border Grid.Row="0" Grid.Column="1" Background="{DynamicResource SurfaceAltBrush}" CornerRadius="18" Padding="20">
                                 <Grid>
                                     <Grid.RowDefinitions>
                                         <RowDefinition Height="Auto"/>
                                         <RowDefinition Height="*"/>
                                     </Grid.RowDefinitions>
 
-                                    <TextBlock Grid.Row="0" Text="ACTIVIDADES PARA ESTA FECHA" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource TextMutedBrush}" Margin="0,0,0,12"/>
+                                    <Grid Grid.Row="0" Margin="0,0,0,12">
+                                        <TextBlock Text="ACTIVIDADES PARA ESTA FECHA" FontSize="11" FontWeight="Bold"
+                                                   Foreground="{DynamicResource TextMutedBrush}" VerticalAlignment="Center"/>
+                                        <Border HorizontalAlignment="Right" Background="{DynamicResource SurfaceMutedBrush}"
+                                                CornerRadius="9" Padding="8,2">
+                                            <TextBlock Text="{Binding Calendar.TasksForSelectedDay.Count, Converter={StaticResource Pluralize}, ConverterParameter='tarea|tareas'}"
+                                                       FontSize="10" FontWeight="SemiBold"
+                                                       Foreground="{DynamicResource TextMutedStrongBrush}"/>
+                                        </Border>
+                                    </Grid>
+
+                                    <!-- Estado vacío -->
+                                    <StackPanel Grid.Row="1" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                Visibility="{Binding Calendar.HasTasks, Converter={StaticResource InvBoolToVis}}"
+                                                Margin="0,30,0,30">
+                                        <fa:IconImage Icon="CalendarCheck" Width="28" Height="28"
+                                                      Foreground="{DynamicResource TextSubtleBrush}"
+                                                      HorizontalAlignment="Center" Margin="0,0,0,10"/>
+                                        <TextBlock Text="Nada agendado para este día" FontSize="13" FontWeight="SemiBold"
+                                                   Foreground="{DynamicResource TextSecondaryBrush}" HorizontalAlignment="Center"/>
+                                        <TextBlock Text="Selecciona otra fecha o crea una tarea nueva."
+                                                   FontSize="11" Foreground="{DynamicResource TextMutedBrush}"
+                                                   HorizontalAlignment="Center" Margin="0,3,0,0"/>
+                                    </StackPanel>
 
                                     <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
                                         <ItemsControl ItemsSource="{Binding Calendar.TasksForSelectedDay}">
@@ -1473,6 +1605,62 @@
                                             </ItemsControl.ItemTemplate>
                                         </ItemsControl>
                                     </ScrollViewer>
+                                </Grid>
+                            </Border>
+
+                            <!-- Próximos días: pendientes después de la fecha seleccionada -->
+                            <Border Grid.Row="1" Grid.ColumnSpan="2" Background="{DynamicResource SurfaceAltBrush}"
+                                    CornerRadius="18" Padding="20,16" Margin="0,16,0,0">
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="*"/>
+                                    </Grid.RowDefinitions>
+
+                                    <Grid Grid.Row="0" Margin="0,0,0,10">
+                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                            <Ellipse Width="7" Height="7" Fill="{DynamicResource AccentBrush}" Margin="0,0,8,0"/>
+                                            <TextBlock Text="PRÓXIMOS DÍAS" FontSize="11" FontWeight="Bold"
+                                                       Foreground="{DynamicResource TextMutedBrush}" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                        <Border HorizontalAlignment="Right" Background="{DynamicResource SurfaceMutedBrush}"
+                                                CornerRadius="9" Padding="8,2">
+                                            <TextBlock Text="{Binding Calendar.UpcomingTasks.Count, Converter={StaticResource Pluralize}, ConverterParameter='pendiente|pendientes'}"
+                                                       FontSize="10" FontWeight="SemiBold"
+                                                       Foreground="{DynamicResource TextMutedStrongBrush}"/>
+                                        </Border>
+                                    </Grid>
+
+                                    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                                        <ItemsControl ItemsSource="{Binding Calendar.UpcomingTasks}"
+                                                      ItemTemplate="{StaticResource UpcomingTaskRow}"
+                                                      Margin="0,0,-6,0">
+                                            <ItemsControl.ItemsPanel>
+                                                <ItemsPanelTemplate>
+                                                    <UniformGrid Columns="2"/>
+                                                </ItemsPanelTemplate>
+                                            </ItemsControl.ItemsPanel>
+                                            <ItemsControl.ItemContainerStyle>
+                                                <Style TargetType="ContentPresenter">
+                                                    <Setter Property="Margin" Value="0,0,6,0"/>
+                                                </Style>
+                                            </ItemsControl.ItemContainerStyle>
+                                        </ItemsControl>
+                                    </ScrollViewer>
+
+                                    <!-- Estado vacío -->
+                                    <StackPanel Grid.Row="1" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                Visibility="{Binding Calendar.HasUpcomingTasks, Converter={StaticResource InvBoolToVis}}"
+                                                Margin="0,14,0,14">
+                                        <fa:IconImage Icon="Leaf" Width="22" Height="22"
+                                                      Foreground="{DynamicResource TextSubtleBrush}"
+                                                      HorizontalAlignment="Center" Margin="0,0,0,8"/>
+                                        <TextBlock Text="Sin pendientes próximos" FontSize="12" FontWeight="SemiBold"
+                                                   Foreground="{DynamicResource TextSecondaryBrush}" HorizontalAlignment="Center"/>
+                                        <TextBlock Text="No hay tareas después de esta fecha." FontSize="10"
+                                                   Foreground="{DynamicResource TextMutedBrush}"
+                                                   HorizontalAlignment="Center" Margin="0,2,0,0"/>
+                                    </StackPanel>
                                 </Grid>
                             </Border>
                         </Grid>

@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.Input;
 using DoItNow.Models;
 using DoItNow.Services;
 using System.Collections.ObjectModel;
+using System.Linq;
 
 namespace DoItNow.ViewModels
 {
@@ -17,6 +18,7 @@ namespace DoItNow.ViewModels
         [ObservableProperty] private double _completionPercentage;
         [ObservableProperty] private string _greeting = string.Empty;
         [ObservableProperty] private string _motivationText = string.Empty;
+        [ObservableProperty] private bool _hasUpcomingTasks;
 
         public ObservableCollection<TaskItem> UpcomingTasks { get; } = new();
         public ObservableCollection<TaskItem> OverdueTasks { get; } = new();
@@ -72,9 +74,19 @@ namespace DoItNow.ViewModels
             {
                 if (t.DueDate.Date < DateTime.Today)
                     OverdueTasks.Add(t);
-                else if (UpcomingTasks.Count < 6)
-                    UpcomingTasks.Add(t);
             }
+
+            // Próximas: pendientes de días futuros, ordenadas por fecha.
+            foreach (var t in pending
+                .Where(t => t.DueDate.Date > DateTime.Today)
+                .OrderBy(t => t.DueDate)
+                .ThenByDescending(t => t.Priority)
+                .Take(8))
+            {
+                UpcomingTasks.Add(t);
+            }
+
+            HasUpcomingTasks = UpcomingTasks.Count > 0;
         }
     }
 }

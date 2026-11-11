@@ -57,7 +57,7 @@
     <!-- Calendar -->
     <SolidColorBrush x:Key="CalendarPanelBrush" Color="#6E9FC7"/>
     <SolidColorBrush x:Key="CalendarTextBrush" Color="#FFFFFF"/>
-    <SolidColorBrush x:Key="CalendarSubTextBrush" Color="#E6F3FF"/>
+    <SolidColorBrush x:Key="CalendarSubTextBrush" Color="#FFFFFF"/>
     <SolidColorBrush x:Key="CalendarDayHoverBrush" Color="#7FB0D6"/>
     <SolidColorBrush x:Key="CalendarSelectedBrush" Color="#1F3F5C"/>
     <SolidColorBrush x:Key="CalendarSelectedTextBrush" Color="#FFFFFF"/>

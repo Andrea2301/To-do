@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.Input;
 using DoItNow.Models;
 using DoItNow.Services;
 using System.Collections.ObjectModel;
+using System.Linq;
 
 namespace DoItNow.ViewModels
 {
@@ -15,8 +16,11 @@ namespace DoItNow.ViewModels
 
         [ObservableProperty] private DateTime _selectedDate = DateTime.Today;
         [ObservableProperty] private string _selectedDateLabel = string.Empty;
+        [ObservableProperty] private bool _hasTasks;
+        [ObservableProperty] private bool _hasUpcomingTasks;
 
         public ObservableCollection<TaskItem> TasksForSelectedDay { get; } = new();
+        public ObservableCollection<TaskItem> UpcomingTasks { get; } = new();
 
         public CalendarViewModel(TaskService taskService)
         {
@@ -43,6 +47,21 @@ namespace DoItNow.ViewModels
             var tasks = await _taskService.GetTasksByDateAsync(SelectedDate);
             TasksForSelectedDay.Clear();
             foreach (var t in tasks) TasksForSelectedDay.Add(t);
+            HasTasks = tasks.Count > 0;
+
+            // Próximos días: pendientes después de la fecha seleccionada.
+            var all = await _taskService.GetAllTasksAsync();
+            UpcomingTasks.Clear();
+            foreach (var t in all
+                .Where(t => !t.IsCompleted && t.DueDate.Date > SelectedDate.Date)
+                .OrderBy(t => t.DueDate)
+                .ThenByDescending(t => t.Priority)
+                .Take(8))
+            {
+                UpcomingTasks.Add(t);
+            }
+
+            HasUpcomingTasks = UpcomingTasks.Count > 0;
         }
 
         [RelayCommand]

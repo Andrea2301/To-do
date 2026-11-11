@@ -22,6 +22,26 @@ namespace DoItNow.Converters
         }
     }
 
+    /// <summary>
+    /// Formatea un conteo con su sustantivo en singular o plural.
+    /// El parámetro usa el formato "singular|plural" (p. ej. "tarea|tareas").
+    /// </summary>
+    public class PluralizeConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            var count = int.TryParse(value?.ToString(), out var parsed) ? parsed : 0;
+            var parts = (parameter?.ToString() ?? "elemento|elementos").Split('|');
+            var singular = parts[0];
+            var plural = parts.Length > 1 ? parts[1] : singular + "s";
+
+            return $"{count} {(count == 1 ? singular : plural)}";
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+            => throw new NotImplementedException();
+    }
+
     /// <summary>Invierte un booleano — para mostrar/ocultar elementos.</summary>
     public class BoolToInverseVisibilityConverter : IValueConverter
     {

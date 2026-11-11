@@ -256,11 +256,10 @@
                             <Grid Grid.Row="0" Margin="0,0,0,10">
                                 <TextBox Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
                                          Style="{StaticResource VaultTextBox}" Padding="10,7"/>
-                                <TextBlock Text="🔎 Buscar claves..." FontSize="11"
-                                           Foreground="{DynamicResource TextMutedBrush}"
-                                           Margin="11,0,0,0" VerticalAlignment="Center" IsHitTestVisible="False">
-                                    <TextBlock.Style>
-                                        <Style TargetType="TextBlock">
+                                <StackPanel Orientation="Horizontal" Margin="11,0,0,0"
+                                            VerticalAlignment="Center" IsHitTestVisible="False">
+                                    <StackPanel.Style>
+                                        <Style TargetType="StackPanel">
                                             <Setter Property="Visibility" Value="Collapsed"/>
                                             <Style.Triggers>
                                                 <DataTrigger Binding="{Binding SearchText}" Value="">
@@ -268,8 +267,13 @@
                                                 </DataTrigger>
                                             </Style.Triggers>
                                         </Style>
-                                    </TextBlock.Style>
-                                </TextBlock>
+                                    </StackPanel.Style>
+                                    <fa:IconImage Icon="Search" Width="10" Height="10"
+                                                  Foreground="{DynamicResource TextMutedBrush}"
+                                                  VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                    <TextBlock Text="Buscar claves..." FontSize="11"
+                                               Foreground="{DynamicResource TextMutedBrush}"/>
+                                </StackPanel>
                             </Grid>
 
                             <ListBox Grid.Row="1" ItemsSource="{Binding FilteredEntries}"
