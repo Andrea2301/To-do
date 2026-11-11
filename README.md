@@ -40,7 +40,7 @@ screenshots.
 - **Task management** — create, edit, complete, delete, search and filter by category
   and priority, with toast feedback and an inline creation form.
 - **Calendar & agenda** — a fully working WPF `CalendarItem` template (`PART_MonthView`
-  / `PART_YearView`) plus per-day task filtering.
+  / `PART_YearView`) with per-day task filtering, integrated into the dashboard.
 - **Hybrid AI workspace** — local [Ollama](https://ollama.com) inference with automatic
   fallback to [Groq Cloud](https://console.groq.com), in one place: a conversational
   assistant and a document mode that turns notes or text files into actionable tasks.
@@ -69,19 +69,16 @@ screenshots.
 
 ### Command center
 
-A real calendar on the left, a daily agenda, quick filters, and a plan board on the
-right. The week strip is generated from the selected date — no hardcoded labels —
-and clicking a day filters the plan instantly.
+The dashboard is the single planning hub: a real month calendar, the daily agenda, quick
+filters, a plan board and the next pending tasks. The week strip is generated from the
+selected date — no hardcoded labels — and clicking a day updates the agenda, the plan
+board and the header instantly. There is no separate calendar module to duplicate this
+work.
 
 ### Task management
 
 Search, category pills, priority colors, inline edit/delete, and a collapsible creation
 form. Completing a task updates the dashboard metrics and raises a toast in real time.
-
-### Calendar & daily agenda
-
-The calendar is a real WPF `Calendar` with a custom template, not a static image.
-Selecting a date drives both the header label and the agenda panel.
 
 ### AI workspace
 
@@ -177,7 +174,7 @@ DoItNow/
 ├─ DoItNow/
 │  ├─ App.xaml / App.xaml.cs        # Startup, theme bootstrap, global error handling
 │  ├─ MainWindow.xaml(.cs)          # Shell, navigation, toasts, window chrome
-│  ├─ Views/                        # Dashboard, Tasks, Calendar, Notes, Vault, AI workspace, Settings
+│  ├─ Views/                        # Tasks, Notes, Vault, AI workspace, Settings
 │  ├─ ViewModels/                   # Main + per-module view models
 │  ├─ Models/                       # Task, SubTask, Chat, Settings, VaultEntry, CodeNote
 │  ├─ Services/                     # Task, Notes, Vault, Crypto, AI, Theme, Dialog, Toast
@@ -298,9 +295,9 @@ Useful for screenshots, demos and quick reviews:
 | --- | --- |
 | `--demo` | Loads curated tasks and a sample AI conversation (idempotent). |
 | `--theme=<id>` | Overrides the saved theme at startup (`light`, `dark`, `sepia`, `midnight`, `ocean`, `nord`, `rose`, `cinnamoroll`, `contrast`). |
-| `--section=dashboard` | Opens the dashboard. |
+| `--section=dashboard` | Opens the dashboard (calendar, agenda and plan board). |
 | `--section=tasks` | Opens task management. |
-| `--section=calendar` | Opens the calendar. |
+| `--section=calendar` | Alias of `dashboard`; the calendar lives there. |
 | `--section=notes` | Opens code notes. |
 | `--section=vault` | Opens the encrypted key vault. |
 | `--section=chat` | Opens the AI workspace in Chat mode. |
@@ -310,7 +307,7 @@ Useful for screenshots, demos and quick reviews:
 Example:
 
 ```powershell
-dotnet run --project DoItNow/DoItNow.csproj -- --demo --theme=dark --section=calendar
+dotnet run --project DoItNow/DoItNow.csproj -- --demo --theme=dark --section=dashboard
 ```
 
 ---

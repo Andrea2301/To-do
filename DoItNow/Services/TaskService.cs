@@ -104,16 +104,6 @@ namespace DoItNow.Services
                 .ToListAsync();
         }
 
-        public async Task<List<TaskItem>> GetTasksByDateAsync(DateTime date)
-        {
-            return await _context.Tasks
-                .Include(t => t.SubTasks)
-                .Where(t => t.DueDate.Date == date.Date)
-                .OrderBy(t => t.IsCompleted)
-                .ThenByDescending(t => t.Priority)
-                .ToListAsync();
-        }
-
         public async Task<List<TaskItem>> GetPendingTasksAsync()
         {
             return await _context.Tasks

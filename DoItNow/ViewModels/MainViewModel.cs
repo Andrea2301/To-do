@@ -12,7 +12,8 @@ namespace DoItNow.ViewModels
 {
     /// <summary>
     /// ViewModel raíz — orquesta la navegación general entre todos los módulos:
-    /// Dashboard, Tareas, Calendario, AI Chat (Ollama), Doc Tools y Configuración.
+    /// Dashboard (calendario + agenda + timeline), Tareas, Notas, Bóveda,
+    /// AI Chat (Ollama), Doc Tools y Configuración.
     /// </summary>
     public partial class MainViewModel : ObservableObject
     {
@@ -29,16 +30,6 @@ namespace DoItNow.ViewModels
         public AiChatViewModel AiChat { get; }
         public DocToolsViewModel DocTools { get; }
         public SettingsViewModel Settings { get; }
-
-        // Alias para compatibilidad de bindings en XAML
-        public DashboardViewModel DashboardVM => Dashboard;
-        public TasksViewModel TasksVM => Tasks;
-        public CalendarViewModel CalendarVM => Calendar;
-        public NotesViewModel NotesVM => Notes;
-        public VaultViewModel VaultVM => Vault;
-        public AiChatViewModel AiChatVM => AiChat;
-        public DocToolsViewModel DocToolsVM => DocTools;
-        public SettingsViewModel SettingsVM => Settings;
 
         [ObservableProperty] private ObservableObject _currentView;
         [ObservableProperty] private string _activeSection = "Dashboard";
@@ -68,7 +59,7 @@ namespace DoItNow.ViewModels
 
             Dashboard = new DashboardViewModel(_taskService);
             Tasks     = new TasksViewModel(_taskService);
-            Calendar  = new CalendarViewModel(_taskService);
+            Calendar  = new CalendarViewModel();
             Notes     = new NotesViewModel();
             Vault     = new VaultViewModel();
             AiChat    = new AiChatViewModel(_chatService, _ollamaService, _settingsService);
@@ -81,7 +72,6 @@ namespace DoItNow.ViewModels
             Tasks.TaskChanged += async () =>
             {
                 await Dashboard.LoadStatsAsync();
-                await Calendar.LoadDayTasksAsync();
             };
 
             // Al cargar datos demo desde Configuración, refrescamos agenda y métricas.
@@ -89,7 +79,6 @@ namespace DoItNow.ViewModels
             {
                 await Tasks.RefreshAsync();
                 await Dashboard.LoadStatsAsync();
-                await Calendar.LoadDayTasksAsync();
             };
 
             // El timeline del dashboard muestra el día seleccionado.
@@ -123,7 +112,8 @@ namespace DoItNow.ViewModels
             SelectedTheme = ThemeService.Current;
             ThemeService.ThemeChanged += OnThemeServiceChanged;
 
-            // Navegación inicial para demos/capturas: --section=tasks|calendar|chat|doctools|settings
+            // Navegación inicial para demos/capturas: --section=dashboard|tasks|chat|doctools|settings
+            // ("calendar" se sigue aceptando como alias de Dashboard).
             var sectionArg = Environment.GetCommandLineArgs()
                 .FirstOrDefault(a => a.StartsWith("--section=", StringComparison.OrdinalIgnoreCase));
 
@@ -301,7 +291,8 @@ namespace DoItNow.ViewModels
                     break;
                 case "calendar":
                 case "calendario":
-                    NavigateToCalendar();
+                    // El calendario vive ahora dentro del Dashboard.
+                    NavigateToDashboard();
                     break;
                 case "notes":
                 case "notas":
@@ -365,15 +356,6 @@ namespace DoItNow.ViewModels
             CurrentSectionTitle = "✅  Mis tareas";
             Tasks.SelectedDateFilter = null; // En Mis Tareas se ve todo el backlog
             _ = Tasks.RefreshAsync();
-        }
-
-        [RelayCommand]
-        private void NavigateToCalendar()
-        {
-            CurrentView = Calendar;
-            ActiveSection = "Calendar";
-            CurrentSectionTitle = "📅  Calendario";
-            _ = Calendar.LoadDayTasksAsync();
         }
 
         [RelayCommand]
