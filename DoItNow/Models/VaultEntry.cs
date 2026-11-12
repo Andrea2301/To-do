@@ -1,4 +1,5 @@
 using System;
+using System.Collections.ObjectModel;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace DoItNow.Models
@@ -35,6 +36,10 @@ namespace DoItNow.Models
         /// <summary>Notas descifradas en memoria. No se persisten.</summary>
         [NotMapped]
         public string Notes { get; set; } = string.Empty;
+
+        /// <summary>Metadatos de los archivos adjuntos (sin contenido). No se persiste aquí.</summary>
+        [NotMapped]
+        public ObservableCollection<VaultAttachment> Attachments { get; } = new();
 
         public string TypeIcon => EntryType switch
         {

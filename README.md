@@ -114,6 +114,11 @@ is unlocked.
   with a single password. Changing the password re-encrypts the whole vault.
 - **Encrypted export/import** — move the vault between machines with a `.ditvault` file
   protected by its own password.
+- **Encrypted attachments** — attach credential files, certificates or JSON keys to any
+  entry. They are encrypted with the same AES-GCM key, capped at 10 MB per file and
+  included in `.ditvault` backups.
+- **AWS credentials import** — read an IAM access-key CSV export or an `~/.aws/credentials`
+  (INI) file, create or update the matching entries, and keep the original file attached.
 
 ### Settings
 
@@ -178,8 +183,8 @@ DoItNow/
 │  ├─ MainWindow.xaml(.cs)          # Shell, navigation, toasts, window chrome
 │  ├─ Views/                        # Tasks, Notes, Vault, AI workspace, Settings
 │  ├─ ViewModels/                   # Main + per-module view models
-│  ├─ Models/                       # Task, SubTask, Chat, Settings, VaultEntry, CodeNote
-│  ├─ Services/                     # Task, Notes, Vault, Crypto, AI, Theme, Dialog, Toast
+│  ├─ Models/                       # Task, SubTask, Chat, Settings, VaultEntry, VaultAttachment, CodeNote
+│  ├─ Services/                     # Task, Notes, Vault, Crypto, AWS importer, AI, Theme, Dialog, Toast
 │  ├─ Controls/                     # CodeEditor (AvalonEdit host with theme-aware colors)
 │  ├─ Converters/                   # Theme-aware value converters
 │  ├─ Data/                         # EF Core DbContext + initialization
@@ -272,12 +277,15 @@ Notes:
 - The master password is **not recoverable**. Losing it means losing the entries.
 - Changing the master password re-encrypts every entry with the new key.
 - Removing the master password re-encrypts the vault again and returns to DPAPI mode.
+- Attachments use the same key as entries: changing or removing the master password
+  re-encrypts every stored file as well.
 - `.ditvault` exports are encrypted with a separate password using the same primitives,
-  so backups remain safe when moved through cloud storage or email.
+  so backups remain safe when moved through cloud storage or email. Format v2 adds
+  attachments; v1 files still import.
 
 ### Database
 
-Tasks, conversations, code notes and encrypted vault entries are stored at:
+Tasks, conversations, code notes and encrypted vault entries (including their files) are stored at:
 
 ```text
 %LOCALAPPDATA%\DoItNow\doitnow.db
@@ -358,6 +366,7 @@ Adding a new theme means creating one dictionary with the same keys and register
 - [x] Encrypted key vault with optional master password
 - [x] Code notes with syntax highlighting (AvalonEdit)
 - [x] Encrypted vault export/import
+- [x] Encrypted vault attachments and AWS credentials import
 - [ ] Drag-and-drop task scheduling on the timeline
 - [ ] Recurring tasks and reminders
 - [ ] CSV / Markdown export

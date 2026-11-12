@@ -40,6 +40,16 @@ namespace DoItNow.ViewModels
         [ObservableProperty] private bool _isSecretVisible;
         [ObservableProperty] private bool _hasEntries;
         [ObservableProperty] private bool _hasFilteredEntries;
+        [ObservableProperty] private bool _hasAttachments;
+
+        /// <summary>Archivos adjuntos de la entrada en edición (metadatos; el contenido vive cifrado).</summary>
+        public ObservableCollection<VaultAttachment> EditAttachments { get; } = new();
+
+        /// <summary>Adjuntos de una entrada nueva que aún no tiene Id en la base.</summary>
+        private readonly List<PendingAttachment> _pendingAttachments = new();
+
+        private sealed record PendingAttachment(
+            string FileName, string ContentType, byte[] Content, VaultAttachment Preview);
 
         [ObservableProperty] private string _editTitle = string.Empty;
         [ObservableProperty] private string _editEntryType = "API Key";
@@ -73,6 +83,7 @@ namespace DoItNow.ViewModels
         public VaultViewModel(VaultService? vaultService = null)
         {
             _vaultService = vaultService ?? new VaultService();
+            EditAttachments.CollectionChanged += (_, _) => HasAttachments = EditAttachments.Count > 0;
             _ = InitializeAsync();
         }
 
@@ -145,6 +156,20 @@ namespace DoItNow.ViewModels
             IsSecretVisible = false;
             OnPropertyChanged(nameof(IsSecretConfigured));
             OnPropertyChanged(nameof(MaskedSecret));
+
+            FillAttachments(value);
+        }
+
+        private void FillAttachments(VaultEntry? entry)
+        {
+            EditAttachments.Clear();
+            _pendingAttachments.Clear();
+
+            if (entry != null)
+            {
+                foreach (var attachment in entry.Attachments)
+                    EditAttachments.Add(attachment);
+            }
         }
 
         partial void OnEditSecretChanged(string value)
@@ -312,6 +337,7 @@ namespace DoItNow.ViewModels
             EditUrl = string.Empty;
             EditSecret = string.Empty;
             EditNotes = string.Empty;
+            FillAttachments(null);
         }
 
         [RelayCommand]
@@ -325,9 +351,11 @@ namespace DoItNow.ViewModels
                 return;
             }
 
-            if (string.IsNullOrWhiteSpace(EditSecret) && string.IsNullOrWhiteSpace(EditNotes))
+            if (string.IsNullOrWhiteSpace(EditSecret) &&
+                string.IsNullOrWhiteSpace(EditNotes) &&
+                EditAttachments.Count == 0)
             {
-                StatusMessage = "⚠️ Añade al menos el secreto o una nota.";
+                StatusMessage = "⚠️ Añade al menos el secreto, una nota o un archivo.";
                 return;
             }
 
@@ -346,6 +374,15 @@ namespace DoItNow.ViewModels
                 };
 
                 await _vaultService.SaveEntryAsync(entry);
+
+                // Los adjuntos de una entrada nueva se suben ahora que ya existe su Id.
+                foreach (var pending in _pendingAttachments)
+                {
+                    await _vaultService.AddAttachmentAsync(
+                        entry.Id, pending.FileName, pending.ContentType, pending.Content);
+                }
+                _pendingAttachments.Clear();
+
                 await LoadEntriesAsync();
 
                 var saved = Entries.FirstOrDefault(e => e.Id == entry.Id);
@@ -578,5 +615,259 @@ namespace DoItNow.ViewModels
                 DialogService.Error("Importación fallida", ex.Message);
             }
         }
+
+        // --- Archivos adjuntos cifrados ---
+
+        [RelayCommand]
+        public async Task AddAttachmentAsync()
+        {
+            if (!IsUnlocked) return;
+
+            var dialog = new OpenFileDialog
+            {
+                Title = "Adjuntar archivo a la bóveda",
+                Filter = "Todos los archivos (*.*)|*.*",
+                CheckFileExists = true
+            };
+
+            if (dialog.ShowDialog() != true) return;
+
+            try
+            {
+                var info = new FileInfo(dialog.FileName);
+                var limitMb = VaultService.MaxAttachmentBytes / (1024 * 1024);
+
+                if (info.Length > VaultService.MaxAttachmentBytes)
+                {
+                    StatusMessage = $"⚠️ El archivo supera el límite de {limitMb} MB.";
+                    DialogService.Error("Archivo demasiado grande",
+                        $"El límite por archivo es de {limitMb} MB.");
+                    return;
+                }
+
+                var content = await File.ReadAllBytesAsync(dialog.FileName);
+                var contentType = GuessContentType(dialog.FileName);
+
+                if (SelectedEntry == null || SelectedEntry.Id <= 0)
+                {
+                    var preview = new VaultAttachment
+                    {
+                        FileName = info.Name,
+                        ContentType = contentType,
+                        SizeBytes = content.Length,
+                        CreatedAt = DateTime.Now
+                    };
+
+                    _pendingAttachments.Add(new PendingAttachment(preview.FileName, contentType, content, preview));
+                    EditAttachments.Add(preview);
+                    StatusMessage = $"📎 '{info.Name}' listo. Se cifrará al guardar la clave.";
+                }
+                else
+                {
+                    var added = await _vaultService.AddAttachmentAsync(
+                        SelectedEntry.Id, info.Name, contentType, content);
+
+                    SelectedEntry.Attachments.Add(added);
+                    EditAttachments.Add(added);
+                    StatusMessage = $"📎 '{added.FileName}' cifrado y adjuntado.";
+                    ToastService.Success("Archivo cifrado y adjuntado", "Bóveda");
+                }
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"❌ No se pudo adjuntar el archivo: {ex.Message}";
+            }
+        }
+
+        [RelayCommand]
+        public async Task SaveAttachmentAsync(VaultAttachment? attachment)
+        {
+            if (attachment == null || !IsUnlocked) return;
+
+            try
+            {
+                byte[] content;
+
+                if (attachment.Id <= 0)
+                {
+                    var pending = _pendingAttachments.FirstOrDefault(p => ReferenceEquals(p.Preview, attachment));
+                    if (pending == null) return;
+                    content = pending.Content;
+                }
+                else
+                {
+                    content = await _vaultService.ReadAttachmentAsync(attachment.Id);
+                }
+
+                var dialog = new SaveFileDialog
+                {
+                    Title = "Guardar archivo descifrado",
+                    FileName = attachment.FileName,
+                    Filter = "Todos los archivos (*.*)|*.*"
+                };
+
+                if (dialog.ShowDialog() != true) return;
+
+                await File.WriteAllBytesAsync(dialog.FileName, content);
+                StatusMessage = $"✓ Archivo guardado en {Path.GetFileName(dialog.FileName)}.";
+                ToastService.Success("Archivo descifrado guardado", "Bóveda");
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"❌ No se pudo guardar el archivo: {ex.Message}";
+                DialogService.Error("No se pudo guardar", ex.Message);
+            }
+        }
+
+        [RelayCommand]
+        public async Task DeleteAttachmentAsync(VaultAttachment? attachment)
+        {
+            if (attachment == null || !IsUnlocked) return;
+
+            if (attachment.Id <= 0)
+            {
+                var pending = _pendingAttachments.FirstOrDefault(p => ReferenceEquals(p.Preview, attachment));
+                if (pending != null) _pendingAttachments.Remove(pending);
+                EditAttachments.Remove(attachment);
+                return;
+            }
+
+            if (!DialogService.Confirm("Eliminar archivo",
+                    $"¿Eliminar '{attachment.FileName}' de la bóveda? Esta acción no se puede deshacer."))
+                return;
+
+            try
+            {
+                await _vaultService.DeleteAttachmentAsync(attachment.Id);
+                EditAttachments.Remove(attachment);
+                SelectedEntry?.Attachments.Remove(attachment);
+                StatusMessage = "🗑 Archivo adjunto eliminado.";
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"❌ No se pudo eliminar el archivo: {ex.Message}";
+            }
+        }
+
+        // --- Importación de credenciales de AWS ---
+
+        [RelayCommand]
+        public async Task ImportAwsCredentialsAsync()
+        {
+            if (!IsUnlocked) return;
+
+            var dialog = new OpenFileDialog
+            {
+                Title = "Importar credenciales de AWS",
+                Filter = "Credenciales de AWS (*.csv;*.ini;*credentials)|*.csv;*.ini;*credentials|Todos los archivos (*.*)|*.*",
+                CheckFileExists = true
+            };
+
+            if (dialog.ShowDialog() != true) return;
+
+            try
+            {
+                IsBusy = true;
+
+                var text = await File.ReadAllTextAsync(dialog.FileName);
+                var credentials = AwsCredentialImporter.Parse(text, dialog.FileName);
+
+                if (credentials.Count == 0)
+                {
+                    StatusMessage = "⚠️ No se encontraron credenciales válidas en el archivo.";
+                    DialogService.Error("Sin credenciales",
+                        "El archivo no parece un CSV de claves de IAM ni un archivo credentials de AWS.");
+                    return;
+                }
+
+                VaultEntry? first = null;
+
+                foreach (var credential in credentials)
+                {
+                    var existing = Entries.FirstOrDefault(e =>
+                        string.Equals(e.Username, credential.AccessKeyId, StringComparison.Ordinal));
+
+                    var entry = new VaultEntry
+                    {
+                        Id = existing?.Id ?? 0,
+                        Title = existing?.Title ?? $"AWS · {credential.Profile}",
+                        EntryType = "API Key",
+                        Username = credential.AccessKeyId,
+                        Url = "https://console.aws.amazon.com/iam/",
+                        Secret = credential.SecretAccessKey,
+                        Notes = BuildAwsNotes(credential)
+                    };
+
+                    await _vaultService.SaveEntryAsync(entry);
+                    first ??= entry;
+                }
+
+                // El archivo original se adjunta una sola vez, a la primera entrada.
+                var fileName = Path.GetFileName(dialog.FileName);
+                var fileContent = await File.ReadAllBytesAsync(dialog.FileName);
+                var attached = false;
+
+                if (first != null &&
+                    fileContent.Length <= VaultService.MaxAttachmentBytes)
+                {
+                    var alreadyStored = await _vaultService.GetEntriesAsync();
+                    var target = alreadyStored.FirstOrDefault(e => e.Id == first.Id);
+
+                    if (target != null && !target.Attachments.Any(a => a.FileName == fileName))
+                    {
+                        await _vaultService.AddAttachmentAsync(
+                            first.Id, fileName, GuessContentType(fileName), fileContent);
+                        attached = true;
+                    }
+                }
+
+                await LoadEntriesAsync();
+
+                IsNewEntry = false;
+                SelectedEntry = first == null ? null : Entries.FirstOrDefault(e => e.Id == first.Id);
+
+                StatusMessage = attached
+                    ? $"✓ {credentials.Count} clave(s) de AWS importadas y archivo original adjuntado."
+                    : $"✓ {credentials.Count} clave(s) de AWS importadas.";
+
+                ToastService.Success($"{credentials.Count} clave(s) de AWS importadas", "Bóveda");
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"❌ No se pudo importar AWS: {ex.Message}";
+                DialogService.Error("Importación de AWS fallida", ex.Message);
+            }
+            finally
+            {
+                IsBusy = false;
+            }
+        }
+
+        private static string BuildAwsNotes(AwsCredentialImporter.AwsCredential credential)
+        {
+            var lines = new List<string>();
+
+            if (!string.IsNullOrWhiteSpace(credential.Region))
+                lines.Add($"region = {credential.Region}");
+
+            if (!string.IsNullOrWhiteSpace(credential.SessionToken))
+                lines.Add($"aws_session_token = {credential.SessionToken}");
+
+            return string.Join(Environment.NewLine, lines);
+        }
+
+        private static string GuessContentType(string path)
+            => Path.GetExtension(path).ToLowerInvariant() switch
+            {
+                ".csv" => "text/csv",
+                ".ini" => "text/plain",
+                ".txt" => "text/plain",
+                ".json" => "application/json",
+                ".pem" or ".crt" or ".cer" => "application/x-pem-file",
+                ".pfx" or ".p12" => "application/x-pkcs12",
+                ".zip" => "application/zip",
+                ".pdf" => "application/pdf",
+                _ => "application/octet-stream"
+            };
     }
 }

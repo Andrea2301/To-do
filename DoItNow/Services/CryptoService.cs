@@ -52,6 +52,10 @@ namespace DoItNow.Services
             => Encoding.UTF8.GetString(DecryptBytes(payload, key));
 
         public static string EncryptBytes(byte[] plaintext, byte[] key)
+            => Convert.ToBase64String(EncryptToBlob(plaintext, key));
+
+        /// <summary>Cifra bytes y devuelve el blob binario (sin Base64), útil para BLOBs.</summary>
+        public static byte[] EncryptToBlob(byte[] plaintext, byte[] key)
         {
             var nonce = RandomBytes(NonceSize);
             var cipher = new byte[plaintext.Length];
@@ -68,7 +72,7 @@ namespace DoItNow.Services
             tag.CopyTo(blob, 1 + NonceSize);
             cipher.CopyTo(blob, 1 + NonceSize + TagSize);
 
-            return Convert.ToBase64String(blob);
+            return blob;
         }
 
         public static byte[] DecryptBytes(string payload, byte[] key)
@@ -76,8 +80,13 @@ namespace DoItNow.Services
             if (string.IsNullOrWhiteSpace(payload))
                 return Array.Empty<byte>();
 
-            var blob = Convert.FromBase64String(payload);
-            if (blob.Length < 1 + NonceSize + TagSize || blob[0] != BlobVersion)
+            return DecryptFromBlob(Convert.FromBase64String(payload), key);
+        }
+
+        /// <summary>Descifra un blob binario generado por <see cref="EncryptToBlob"/>.</summary>
+        public static byte[] DecryptFromBlob(byte[] blob, byte[] key)
+        {
+            if (blob == null || blob.Length < 1 + NonceSize + TagSize || blob[0] != BlobVersion)
                 throw new CryptographicException("Formato de cifrado desconocido.");
 
             var nonce = blob.AsSpan(1, NonceSize);

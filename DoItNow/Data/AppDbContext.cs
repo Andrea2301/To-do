@@ -13,12 +13,22 @@ namespace DoItNow.Data
         public DbSet<ChatMessage> ChatMessages => Set<ChatMessage>();
         public DbSet<AppSetting> Settings => Set<AppSetting>();
         public DbSet<VaultEntry> VaultEntries => Set<VaultEntry>();
+        public DbSet<VaultAttachment> VaultAttachments => Set<VaultAttachment>();
         public DbSet<CodeNote> CodeNotes => Set<CodeNote>();
 
         public static string DatabasePath
         {
             get
             {
+                // Permite aislar la base en pruebas/herramientas sin tocar la del usuario.
+                var overridePath = Environment.GetEnvironmentVariable("DOITNOW_DB_PATH");
+                if (!string.IsNullOrWhiteSpace(overridePath))
+                {
+                    var fullPath = Path.GetFullPath(overridePath);
+                    Directory.CreateDirectory(Path.GetDirectoryName(fullPath)!);
+                    return fullPath;
+                }
+
                 var folder = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
                 var dir = Path.Combine(folder, "DoItNow");
                 Directory.CreateDirectory(dir);
@@ -115,6 +125,21 @@ namespace DoItNow.Data
                 entity.Property(e => e.Language).HasMaxLength(40);
                 entity.HasIndex(e => e.Title);
                 entity.HasIndex(e => e.UpdatedAt);
+            });
+
+            // 8. Archivos adjuntos cifrados de la bóveda (VaultAttachments)
+            modelBuilder.Entity<VaultAttachment>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.FileName).IsRequired().HasMaxLength(260);
+                entity.Property(e => e.ContentType).HasMaxLength(120);
+                entity.Property(e => e.EncryptedContent).IsRequired();
+                entity.HasIndex(e => e.VaultEntryId);
+
+                entity.HasOne(a => a.Entry)
+                      .WithMany()
+                      .HasForeignKey(a => a.VaultEntryId)
+                      .OnDelete(DeleteBehavior.Cascade);
             });
         }
 
@@ -229,11 +254,26 @@ namespace DoItNow.Data
                 );
             ");
 
+            // Archivos adjuntos de la bóveda: contenido siempre cifrado (BLOB).
+            Database.ExecuteSqlRaw(@"
+                CREATE TABLE IF NOT EXISTS VaultAttachments (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    VaultEntryId INTEGER NOT NULL,
+                    FileName TEXT NOT NULL,
+                    ContentType TEXT NOT NULL DEFAULT 'application/octet-stream',
+                    SizeBytes INTEGER NOT NULL DEFAULT 0,
+                    EncryptedContent BLOB NOT NULL,
+                    CreatedAt TEXT NOT NULL,
+                    FOREIGN KEY(VaultEntryId) REFERENCES VaultEntries(Id) ON DELETE CASCADE
+                );
+            ");
+
             try
             {
                 Database.ExecuteSqlRaw("CREATE INDEX IF NOT EXISTS IX_VaultEntries_Title ON VaultEntries(Title);");
                 Database.ExecuteSqlRaw("CREATE INDEX IF NOT EXISTS IX_CodeNotes_Title ON CodeNotes(Title);");
                 Database.ExecuteSqlRaw("CREATE INDEX IF NOT EXISTS IX_CodeNotes_UpdatedAt ON CodeNotes(UpdatedAt);");
+                Database.ExecuteSqlRaw("CREATE INDEX IF NOT EXISTS IX_VaultAttachments_VaultEntryId ON VaultAttachments(VaultEntryId);");
             }
             catch { }
         }

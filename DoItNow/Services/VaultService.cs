@@ -30,7 +30,10 @@ namespace DoItNow.Services
         public const string KeyDpapiWrapped = "Vault_DpapiWrappedKey";
 
         private const string ExportFormat = "doitnow-vault";
-        private const int ExportVersion = 1;
+        private const int ExportVersion = 2;
+
+        /// <summary>Tamaño máximo permitido por archivo adjunto.</summary>
+        public const int MaxAttachmentBytes = 10 * 1024 * 1024;
 
         private static readonly byte[] DpapiEntropy =
             Encoding.UTF8.GetBytes("DoItNow.Vault.DPAPI.v1");
@@ -212,10 +215,27 @@ namespace DoItNow.Services
                 .OrderBy(e => e.Title)
                 .ToListAsync();
 
+            var attachments = await db.VaultAttachments
+                .AsNoTracking()
+                .OrderBy(a => a.FileName)
+                .Select(a => new VaultAttachment
+                {
+                    Id = a.Id,
+                    VaultEntryId = a.VaultEntryId,
+                    FileName = a.FileName,
+                    ContentType = a.ContentType,
+                    SizeBytes = a.SizeBytes,
+                    CreatedAt = a.CreatedAt
+                })
+                .ToListAsync();
+
             foreach (var entry in entries)
             {
                 entry.Secret = SafeDecrypt(entry.EncryptedSecret, _key!);
                 entry.Notes = SafeDecrypt(entry.EncryptedNotes, _key!);
+
+                foreach (var attachment in attachments.Where(a => a.VaultEntryId == entry.Id))
+                    entry.Attachments.Add(attachment);
             }
 
             return entries;
@@ -264,7 +284,80 @@ namespace DoItNow.Services
             var entry = await db.VaultEntries.FindAsync(entryId);
             if (entry == null) return;
 
+            var attachments = await db.VaultAttachments
+                .Where(a => a.VaultEntryId == entryId)
+                .ToListAsync();
+
+            if (attachments.Count > 0)
+                db.VaultAttachments.RemoveRange(attachments);
+
             db.VaultEntries.Remove(entry);
+            await db.SaveChangesAsync();
+        }
+
+        /// <summary>Adjunta un archivo cifrado a una entrada. Devuelve sus metadatos.</summary>
+        public async Task<VaultAttachment> AddAttachmentAsync(
+            int entryId, string fileName, string contentType, byte[] content)
+        {
+            EnsureUnlocked();
+            if (entryId <= 0) throw new ArgumentException("La entrada no existe.", nameof(entryId));
+            if (content == null) throw new ArgumentNullException(nameof(content));
+            if (content.Length > MaxAttachmentBytes)
+                throw new InvalidOperationException(
+                    $"El archivo supera el límite de {MaxAttachmentBytes / (1024 * 1024)} MB.");
+
+            var safeName = Path.GetFileName(fileName ?? string.Empty);
+            if (string.IsNullOrWhiteSpace(safeName))
+                safeName = "archivo.bin";
+
+            using var db = new AppDbContext();
+            if (!await db.VaultEntries.AnyAsync(e => e.Id == entryId))
+                throw new InvalidOperationException("La entrada ya no existe.");
+
+            var attachment = new VaultAttachment
+            {
+                VaultEntryId = entryId,
+                FileName = safeName,
+                ContentType = string.IsNullOrWhiteSpace(contentType) ? "application/octet-stream" : contentType,
+                SizeBytes = content.Length,
+                EncryptedContent = CryptoService.EncryptToBlob(content, _key!),
+                CreatedAt = DateTime.Now
+            };
+
+            db.VaultAttachments.Add(attachment);
+
+            var entry = await db.VaultEntries.FindAsync(entryId);
+            if (entry != null) entry.UpdatedAt = DateTime.Now;
+
+            await db.SaveChangesAsync();
+
+            attachment.EncryptedContent = Array.Empty<byte>();
+            return attachment;
+        }
+
+        /// <summary>Devuelve el contenido descifrado de un adjunto.</summary>
+        public async Task<byte[]> ReadAttachmentAsync(int attachmentId)
+        {
+            EnsureUnlocked();
+
+            using var db = new AppDbContext();
+            var attachment = await db.VaultAttachments
+                .AsNoTracking()
+                .FirstOrDefaultAsync(a => a.Id == attachmentId)
+                ?? throw new InvalidOperationException("El archivo adjunto ya no existe.");
+
+            return CryptoService.DecryptFromBlob(attachment.EncryptedContent, _key!);
+        }
+
+        public async Task DeleteAttachmentAsync(int attachmentId)
+        {
+            EnsureUnlocked();
+
+            using var db = new AppDbContext();
+            var attachment = await db.VaultAttachments.FindAsync(attachmentId);
+            if (attachment == null) return;
+
+            db.VaultAttachments.Remove(attachment);
             await db.SaveChangesAsync();
         }
 
@@ -277,20 +370,54 @@ namespace DoItNow.Services
             EnsureUnlocked();
 
             var entries = await GetEntriesAsync();
+            var exportEntries = new List<ExportEntry>();
+
+            foreach (var entry in entries)
+            {
+                var exportAttachments = new List<ExportAttachment>();
+
+                foreach (var meta in entry.Attachments)
+                {
+                    byte[] content;
+                    try
+                    {
+                        content = await ReadAttachmentAsync(meta.Id);
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Diagnostics.Debug.WriteLine(
+                            $"[VaultService] Adjunto omitido en la exportación ({meta.FileName}): {ex.Message}");
+                        continue;
+                    }
+
+                    exportAttachments.Add(new ExportAttachment
+                    {
+                        FileName = meta.FileName,
+                        ContentType = meta.ContentType,
+                        SizeBytes = meta.SizeBytes,
+                        CreatedAt = meta.CreatedAt,
+                        Content = Convert.ToBase64String(content)
+                    });
+                }
+
+                exportEntries.Add(new ExportEntry
+                {
+                    Title = entry.Title,
+                    EntryType = entry.EntryType,
+                    Username = entry.Username,
+                    Url = entry.Url,
+                    Secret = entry.Secret,
+                    Notes = entry.Notes,
+                    CreatedAt = entry.CreatedAt,
+                    Attachments = exportAttachments
+                });
+            }
+
             var payload = new ExportPayload
             {
                 App = "DoItNow",
                 ExportedAt = DateTime.Now,
-                Entries = entries.Select(e => new ExportEntry
-                {
-                    Title = e.Title,
-                    EntryType = e.EntryType,
-                    Username = e.Username,
-                    Url = e.Url,
-                    Secret = e.Secret,
-                    Notes = e.Notes,
-                    CreatedAt = e.CreatedAt
-                }).ToList()
+                Entries = exportEntries
             };
 
             var json = JsonSerializer.Serialize(payload, JsonOptions);
@@ -368,6 +495,48 @@ namespace DoItNow.Services
                 target.EncryptedSecret = CryptoService.Encrypt(item.Secret ?? string.Empty, _key!);
                 target.EncryptedNotes = CryptoService.Encrypt(item.Notes ?? string.Empty, _key!);
                 target.UpdatedAt = DateTime.Now;
+
+                // Guardamos primero para obtener el Id de las entradas nuevas.
+                await db.SaveChangesAsync();
+
+                if (item.Attachments != null)
+                {
+                    foreach (var attachment in item.Attachments)
+                    {
+                        if (string.IsNullOrWhiteSpace(attachment.FileName)) continue;
+
+                        byte[] content;
+                        try
+                        {
+                            content = Convert.FromBase64String(attachment.Content ?? string.Empty);
+                        }
+                        catch (FormatException)
+                        {
+                            continue;
+                        }
+
+                        if (content.Length > MaxAttachmentBytes) continue;
+
+                        var previous = await db.VaultAttachments
+                            .FirstOrDefaultAsync(a => a.VaultEntryId == target.Id &&
+                                                      a.FileName == attachment.FileName);
+                        if (previous != null)
+                            db.VaultAttachments.Remove(previous);
+
+                        db.VaultAttachments.Add(new VaultAttachment
+                        {
+                            VaultEntryId = target.Id,
+                            FileName = Path.GetFileName(attachment.FileName),
+                            ContentType = string.IsNullOrWhiteSpace(attachment.ContentType)
+                                ? "application/octet-stream"
+                                : attachment.ContentType,
+                            SizeBytes = content.Length,
+                            EncryptedContent = CryptoService.EncryptToBlob(content, _key!),
+                            CreatedAt = attachment.CreatedAt == default ? DateTime.Now : attachment.CreatedAt
+                        });
+                    }
+                }
+
                 imported++;
             }
 
@@ -394,6 +563,25 @@ namespace DoItNow.Services
                 var notes = SafeDecrypt(entry.EncryptedNotes, oldKey);
                 entry.EncryptedSecret = CryptoService.Encrypt(secret, newKey);
                 entry.EncryptedNotes = CryptoService.Encrypt(notes, newKey);
+            }
+
+            // Los adjuntos están cifrados con la misma clave: también deben re-cifrarse.
+            var attachments = await db.VaultAttachments.ToListAsync();
+            foreach (var attachment in attachments)
+            {
+                byte[] content;
+                try
+                {
+                    content = CryptoService.DecryptFromBlob(attachment.EncryptedContent, oldKey);
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine(
+                        $"[VaultService] No se pudo descifrar el adjunto {attachment.FileName}: {ex.Message}");
+                    continue;
+                }
+
+                attachment.EncryptedContent = CryptoService.EncryptToBlob(content, newKey);
             }
 
             await db.SaveChangesAsync();
@@ -462,6 +650,18 @@ namespace DoItNow.Services
             public string Secret { get; set; } = string.Empty;
             public string Notes { get; set; } = string.Empty;
             public DateTime CreatedAt { get; set; }
+            public List<ExportAttachment> Attachments { get; set; } = new();
+        }
+
+        private class ExportAttachment
+        {
+            public string FileName { get; set; } = string.Empty;
+            public string ContentType { get; set; } = "application/octet-stream";
+            public long SizeBytes { get; set; }
+            public DateTime CreatedAt { get; set; }
+
+            /// <summary>Contenido en Base64 dentro del payload cifrado.</summary>
+            public string Content { get; set; } = string.Empty;
         }
     }
 }
