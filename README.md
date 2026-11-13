@@ -4,9 +4,9 @@
 and on-device AI. Built with WPF and .NET 8.**
 
 DoItNow puts the things a developer reaches for all day in one window: a daily planner, a
-syntax-highlighted code notes editor, an AES-256-GCM vault for API keys and AWS
-credentials, offline document conversion, and a hybrid AI assistant that can run entirely
-on your machine. Local profiles, nine themes, SQLite persistence, no account required.
+syntax-highlighted code notes editor, an AES-256-GCM vault for API keys, `.env` values and
+AWS credentials, offline document conversion, and a hybrid AI assistant that can run
+entirely on your machine. Local profiles, nine themes, SQLite persistence, no account required.
 
 <p>
   <img alt=".NET 8" src="https://img.shields.io/badge/.NET-8.0-512BD4?logo=dotnet&logoColor=white">
@@ -60,8 +60,9 @@ screenshots.
 ## Highlights
 
 - **Encrypted key vault** — store API keys, tokens, connection strings and passwords
-  protected with AES-256-GCM. Optional master password (PBKDF2-SHA256) or transparent
-  protection via Windows DPAPI; secrets stay masked until you reveal them.
+  protected with AES-256-GCM. Import `.env` files and AWS credentials, or use the optional
+  master password (PBKDF2-SHA256) / transparent Windows DPAPI protection; secrets stay
+  masked until you reveal them.
 - **Code notes with real highlighting** — an AvalonEdit-powered editor with line
   numbers, syntax highlighting for C#, JSON, SQL, JavaScript, Python, PowerShell, XML
   and Markdown, clipboard-aware pasting and file export.
