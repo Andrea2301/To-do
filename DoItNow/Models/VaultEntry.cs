@@ -47,6 +47,7 @@ namespace DoItNow.Models
             "Token" => "🎫",
             "Contraseña" => "🔒",
             "Conexión" => "🌐",
+            "Variable" => "⚙",
             _ => "🏷"
         };
     }

@@ -182,6 +182,10 @@
                             Content="☁ AWS" Margin="0,0,6,0"
                             ToolTip="Importar credenciales de AWS (CSV de IAM o archivo credentials)"
                             Visibility="{Binding IsUnlocked, Converter={StaticResource BoolToVis}}"/>
+                    <Button Command="{Binding ImportEnvFileCommand}" Style="{StaticResource VaultGhostButton}"
+                            Content="⚙ .env" Margin="0,0,6,0"
+                            ToolTip="Importar variables de un archivo .env como entradas cifradas"
+                            Visibility="{Binding IsUnlocked, Converter={StaticResource BoolToVis}}"/>
                     <Button Command="{Binding SetupMasterPasswordCommand}" Style="{StaticResource VaultGhostButton}"
                             Content="🔐 Activar contraseña" Margin="0,0,6,0"
                             Visibility="{Binding CanConfigurePassword, Converter={StaticResource BoolToVis}}"/>

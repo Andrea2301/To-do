@@ -31,8 +31,8 @@ DoItNow collapses that loop into a single local-first desktop app:
   instead of weeks of grooming.
 - **Keep code notes where the code is** — syntax highlighting for eight languages and
   export to real source files.
-- **Keep secrets out of `.env` files and chat logs** — an encrypted vault that imports AWS
-  credentials and stores credential files as encrypted attachments.
+- **Keep secrets out of `.env` files and chat logs** — an encrypted vault that imports
+  `.env` files and AWS credentials and stores credential files as encrypted attachments.
 - **Turn specs into tasks** — drop a PDF, Word or Markdown file and let the assistant
   extract actionable items, offline if you prefer.
 - **Run AI on proprietary code** — local Ollama inference by default, Groq Cloud as an
@@ -51,7 +51,7 @@ screenshots.
 | Planning a sprint day | Dashboard calendar, daily agenda and quick filters — no backlog grooming |
 | Reading a spec or issue export | Document mode extracts tasks from PDF, Word, Markdown or plain text |
 | Jotting a snippet | Code notes with highlighting for C#, JSON, SQL, JS, Python, PowerShell, XML and Markdown |
-| Rotating credentials | Encrypted vault with AWS CSV/INI import and encrypted attachments |
+| Rotating credentials | Encrypted vault with AWS CSV/INI import, `.env` import and encrypted attachments |
 | Working on proprietary code | Local Ollama inference — prompts and code never leave the machine |
 | Sharing a PC | Local profiles with optional password and separate databases |
 
@@ -142,6 +142,9 @@ is unlocked.
   included in `.ditvault` backups.
 - **AWS credentials import** — read an IAM access-key CSV export or an `~/.aws/credentials`
   (INI) file, create or update the matching entries, and keep the original file attached.
+- **`.env` import** — read a dotenv file, create one encrypted entry per key, update
+  entries with the same name instead of duplicating them, and keep the original file
+  attached. Supports comments, `export`, quotes and inline comments.
 
 ### Command center
 
@@ -238,7 +241,7 @@ DoItNow/
 │  ├─ Views/                        # Login, Tasks, Notes, Vault, AI workspace, Settings
 │  ├─ ViewModels/                   # Main + per-module view models
 │  ├─ Models/                       # Task, SubTask, Chat, Settings, VaultEntry, VaultAttachment, CodeNote, AppProfile
-│  ├─ Services/                     # Task, Notes, Vault, Crypto, AWS importer, Profiles, AI, Theme, Dialog, Toast
+│  ├─ Services/                     # Task, Notes, Vault, Crypto, AWS/.env importers, Profiles, AI, Theme, Dialog, Toast
 │  ├─ Controls/                     # CodeEditor (AvalonEdit host with theme-aware colors)
 │  ├─ Converters/                   # Theme-aware value converters
 │  ├─ Data/                         # EF Core DbContext + initialization
@@ -303,10 +306,11 @@ If you are upgrading from a version without profiles, the existing
 ### Tests
 
 The suite covers cryptography, the encrypted vault (entries, attachments, master-password
-rotation and encrypted export/import), the AWS credentials parser, and the local profile
-registry (creation, password verification and rotation, deletion, legacy database
-migration and registry recovery). Each test runs against a temporary SQLite database and a
-temporary profile root, so your real data is never touched.
+rotation and encrypted export/import), the AWS credentials parser, the `.env` parser and
+vault importer, and the local profile registry (creation, password verification and
+rotation, deletion, legacy database migration and registry recovery). Each test runs
+against a temporary SQLite database and a temporary profile root, so your real data is
+never touched.
 
 ```powershell
 dotnet test DoItNow.Tests/DoItNow.Tests.csproj
@@ -363,6 +367,8 @@ Notes:
 - Removing the master password re-encrypts the vault again and returns to DPAPI mode.
 - Attachments use the same key as entries: changing or removing the master password
   re-encrypts every stored file as well.
+- `.env` values are stored as regular vault entries (AES-256-GCM) of type `Variable`; the
+  source file is attached, encrypted, to the first entry.
 - `.ditvault` exports are encrypted with a separate password using the same primitives,
   so backups remain safe when moved through cloud storage or email. Format v2 adds
   attachments; v1 files still import.
@@ -470,7 +476,7 @@ Adding a new theme means creating one dictionary with the same keys and register
 - [ ] Drag-and-drop task scheduling on the timeline
 - [ ] Recurring tasks and reminders
 - [ ] Command palette (`Ctrl+K`) for navigation and quick capture
-- [ ] Import `.env` files into the encrypted vault
+- [x] Import `.env` files into the encrypted vault
 - [ ] CSV / Markdown export of tasks and code notes
 - [ ] Optional cloud sync backend
 - [x] Build CI workflow

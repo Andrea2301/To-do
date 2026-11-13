@@ -26,7 +26,7 @@ namespace DoItNow.ViewModels
 
         public ObservableCollection<string> EntryTypes { get; } = new()
         {
-            "API Key", "Token", "Contraseña", "Conexión", "Otro"
+            "API Key", "Token", "Contraseña", "Conexión", "Variable", "Otro"
         };
 
         [ObservableProperty] private bool _isUnlocked;
@@ -854,6 +854,101 @@ namespace DoItNow.ViewModels
                 lines.Add($"aws_session_token = {credential.SessionToken}");
 
             return string.Join(Environment.NewLine, lines);
+        }
+
+        // --- Importación de variables .env ---
+
+        [RelayCommand]
+        public async Task ImportEnvFileAsync()
+        {
+            if (!IsUnlocked) return;
+
+            var dialog = new OpenFileDialog
+            {
+                Title = "Importar variables de entorno",
+                Filter = "Archivos .env (*.env;*.env.*)|*.env;*.env.*|Todos los archivos (*.*)|*.*",
+                CheckFileExists = true
+            };
+
+            if (dialog.ShowDialog() != true) return;
+
+            try
+            {
+                IsBusy = true;
+
+                var text = await File.ReadAllTextAsync(dialog.FileName);
+                var variables = EnvFileImporter.Parse(text);
+
+                if (variables.Count == 0)
+                {
+                    StatusMessage = "⚠️ No se encontraron variables válidas en el archivo.";
+                    DialogService.Error("Sin variables",
+                        "El archivo no contiene líneas con el formato CLAVE=valor.");
+                    return;
+                }
+
+                var fileName = Path.GetFileName(dialog.FileName);
+                var preview = string.Join(", ", variables.Take(6).Select(v => v.Key));
+                if (variables.Count > 6)
+                    preview += $" y {variables.Count - 6} más";
+
+                var confirmed = DialogService.Confirm(
+                    "Importar variables de entorno",
+                    $"Se encontraron {variables.Count} variable(s) en {fileName}:\n\n{preview}\n\n" +
+                    "Se guardarán cifradas en la bóveda. Las entradas con el mismo nombre se actualizan.");
+
+                if (!confirmed)
+                {
+                    StatusMessage = "Importación cancelada.";
+                    return;
+                }
+
+                var import = await EnvVaultImporter.ImportAsync(
+                    _vaultService, variables, fileName, DateTime.Now);
+
+                var first = import.First;
+
+                // El archivo original se adjunta una sola vez, a la primera entrada.
+                var fileContent = await File.ReadAllBytesAsync(dialog.FileName);
+                var attached = false;
+
+                if (first != null && fileContent.Length <= VaultService.MaxAttachmentBytes)
+                {
+                    var stored = await _vaultService.GetEntriesAsync();
+                    var target = stored.FirstOrDefault(e => e.Id == first.Id);
+
+                    if (target != null && !target.Attachments.Any(a => a.FileName == fileName))
+                    {
+                        await _vaultService.AddAttachmentAsync(
+                            first.Id, fileName, GuessContentType(fileName), fileContent);
+                        attached = true;
+                    }
+                }
+
+                await LoadEntriesAsync();
+
+                IsNewEntry = false;
+                SelectedEntry = first == null ? null : Entries.FirstOrDefault(e => e.Id == first.Id);
+
+                var summary = import.Updated > 0
+                    ? $"{import.Created} nueva(s), {import.Updated} actualizada(s)"
+                    : $"{import.Created} nueva(s)";
+
+                StatusMessage = attached
+                    ? $"✓ {summary} desde .env y archivo original adjuntado."
+                    : $"✓ {summary} desde .env.";
+
+                ToastService.Success($"{variables.Count} variable(s) importadas", "Bóveda");
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"❌ No se pudo importar el archivo .env: {ex.Message}";
+                DialogService.Error("Importación .env fallida", ex.Message);
+            }
+            finally
+            {
+                IsBusy = false;
+            }
         }
 
         private static string GuessContentType(string path)
