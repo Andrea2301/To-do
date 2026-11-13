@@ -60,3 +60,7 @@ jobs:
 
             Optional: copy `appsettings.example.json` to `appsettings.json` to preselect a theme
             or an AI provider. The file is never overwritten by the app.
+
+            Google Drive backups use your own free OAuth client. See the
+            [Google Drive setup](https://github.com/Andrea2301/To-do#google-drive-setup)
+            section of the README for the five-step configuration.
