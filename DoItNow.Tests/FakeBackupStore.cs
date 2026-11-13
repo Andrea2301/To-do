@@ -1,5 +1,5 @@
 using DoItNow.Models;
-using DoItNow.Services.Drive;
+using DoItNow.Services.Backup;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,19 +8,19 @@ using System.Threading.Tasks;
 
 namespace DoItNow.Tests;
 
-/// <summary>Cliente de Drive en memoria: guarda los respaldos subidos y simula la carpeta appDataFolder.</summary>
-internal sealed class FakeDriveClient : IDriveBackupClient
+/// <summary>Almacén de respaldos en memoria: guarda los archivos subidos y simula un destino remoto.</summary>
+internal sealed class FakeBackupStore : IBackupStore
 {
     private readonly Dictionary<string, byte[]> _content = new();
 
-    public Dictionary<string, DriveBackupFile> Files { get; } = new();
+    public Dictionary<string, VaultBackupFile> Files { get; } = new();
     public List<string> Deleted { get; } = new();
     public List<string> UploadedNames { get; } = new();
     public byte[]? LastUploadedContent { get; private set; }
 
-    public FakeDriveClient Seed(string id, string name, byte[] content, DateTimeOffset modifiedAt)
+    public FakeBackupStore Seed(string id, string name, byte[] content, DateTimeOffset modifiedAt)
     {
-        Files[id] = new DriveBackupFile
+        Files[id] = new VaultBackupFile
         {
             Id = id,
             Name = name,
@@ -31,15 +31,15 @@ internal sealed class FakeDriveClient : IDriveBackupClient
         return this;
     }
 
-    public Task<IReadOnlyList<DriveBackupFile>> ListAsync(CancellationToken cancellationToken = default) =>
-        Task.FromResult<IReadOnlyList<DriveBackupFile>>(
+    public Task<IReadOnlyList<VaultBackupFile>> ListAsync(CancellationToken cancellationToken = default) =>
+        Task.FromResult<IReadOnlyList<VaultBackupFile>>(
             Files.Values.OrderByDescending(f => f.ModifiedAt).ToList());
 
-    public Task<DriveBackupFile> UploadAsync(
+    public Task<VaultBackupFile> UploadAsync(
         string fileName, byte[] content, CancellationToken cancellationToken = default)
     {
         var id = $"file-{Files.Count + 1}";
-        var file = new DriveBackupFile
+        var file = new VaultBackupFile
         {
             Id = id,
             Name = fileName,

@@ -1,4 +1,5 @@
 using DoItNow.Models;
+using DoItNow.Services.Backup;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -12,20 +13,11 @@ using System.Threading.Tasks;
 
 namespace DoItNow.Services.Drive
 {
-    /// <summary>Operaciones de respaldo que usa <see cref="DriveBackupService"/>.</summary>
-    public interface IDriveBackupClient
-    {
-        Task<IReadOnlyList<DriveBackupFile>> ListAsync(CancellationToken cancellationToken = default);
-        Task<DriveBackupFile> UploadAsync(string fileName, byte[] content, CancellationToken cancellationToken = default);
-        Task<byte[]> DownloadAsync(string fileId, CancellationToken cancellationToken = default);
-        Task DeleteAsync(string fileId, CancellationToken cancellationToken = default);
-    }
-
     /// <summary>
     /// Cliente mínimo de Google Drive v3 sobre la carpeta oculta <c>appDataFolder</c>:
     /// la app solo puede ver sus propios respaldos, nunca el resto del Drive del usuario.
     /// </summary>
-    public sealed class GoogleDriveClient : IDriveBackupClient
+    public sealed class GoogleDriveClient : IBackupStore
     {
         public const string ApiBase = "https://www.googleapis.com/drive/v3";
         public const string UploadBase = "https://www.googleapis.com/upload/drive/v3";
@@ -44,7 +36,7 @@ namespace DoItNow.Services.Drive
             _invalidateToken = invalidateToken;
         }
 
-        public async Task<IReadOnlyList<DriveBackupFile>> ListAsync(
+        public async Task<IReadOnlyList<VaultBackupFile>> ListAsync(
             CancellationToken cancellationToken = default)
         {
             var url = $"{ApiBase}/files?spaces=appDataFolder" +
@@ -53,7 +45,7 @@ namespace DoItNow.Services.Drive
             using var response = await SendAsync(HttpMethod.Get, url, cancellationToken);
             var json = await response.Content.ReadAsStringAsync(cancellationToken);
 
-            var files = new List<DriveBackupFile>();
+            var files = new List<VaultBackupFile>();
             using var doc = JsonDocument.Parse(json);
 
             if (!doc.RootElement.TryGetProperty("files", out var array) ||
@@ -68,7 +60,7 @@ namespace DoItNow.Services.Drive
                 if (!name.EndsWith(".ditvault", StringComparison.OrdinalIgnoreCase))
                     continue;
 
-                files.Add(new DriveBackupFile
+                files.Add(new VaultBackupFile
                 {
                     Id = item.TryGetProperty("id", out var id) ? id.GetString() ?? string.Empty : string.Empty,
                     Name = name,
@@ -80,7 +72,7 @@ namespace DoItNow.Services.Drive
             return files;
         }
 
-        public async Task<DriveBackupFile> UploadAsync(
+        public async Task<VaultBackupFile> UploadAsync(
             string fileName, byte[] content, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(fileName))
@@ -127,7 +119,7 @@ namespace DoItNow.Services.Drive
             using var doc = JsonDocument.Parse(json);
             var root = doc.RootElement;
 
-            return new DriveBackupFile
+            return new VaultBackupFile
             {
                 Id = root.TryGetProperty("id", out var id) ? id.GetString() ?? string.Empty : string.Empty,
                 Name = root.TryGetProperty("name", out var name) ? name.GetString() ?? fileName : fileName,

@@ -1,5 +1,4 @@
 using DoItNow.Services;
-using DoItNow.Services.Drive;
 using DoItNow.ViewModels;
 using System.Windows;
 using System.Windows.Input;
@@ -7,20 +6,20 @@ using System.Windows.Input;
 namespace DoItNow.Views
 {
     /// <summary>
-    /// Ventana modal de respaldos en Google Drive. El cifrado del vault ocurre antes de
-    /// subir el archivo, así que Drive nunca ve secretos en claro.
+    /// Ventana modal de respaldos del vault. El cifrado ocurre antes de guardar el archivo,
+    /// así que la carpeta o Drive solo ven bytes.
     /// </summary>
-    public partial class DriveBackupWindow : Window
+    public partial class BackupWindow : Window
     {
-        private readonly DriveBackupViewModel _viewModel;
+        private readonly BackupViewModel _viewModel;
 
         public bool VaultChanged { get; private set; }
 
-        public DriveBackupWindow(VaultService vault)
+        public BackupWindow(VaultService vault)
         {
             InitializeComponent();
 
-            _viewModel = new DriveBackupViewModel(new DriveBackupCoordinator(vault), vault);
+            _viewModel = new BackupViewModel(vault);
             _viewModel.VaultRestored += () => VaultChanged = true;
             DataContext = _viewModel;
 

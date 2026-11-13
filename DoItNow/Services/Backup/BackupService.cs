@@ -1,34 +1,35 @@
 using DoItNow.Models;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace DoItNow.Services.Drive
+namespace DoItNow.Services.Backup
 {
     /// <summary>
-    /// Orquesta el respaldo del vault cifrado en Google Drive: exporta a un archivo temporal,
-    /// lo sube a la carpeta oculta de la app y conserva solo los últimos respaldos.
-    /// El contenido sigue cifrado con la contraseña de exportación; Drive solo ve bytes.
+    /// Orquesta el respaldo del vault cifrado: exporta a un archivo temporal, lo sube al
+    /// destino (carpeta sincronizada o Drive) y conserva solo los últimos respaldos.
+    /// El contenido sigue cifrado con la contraseña de exportación; el destino solo ve bytes.
     /// </summary>
-    public sealed class DriveBackupService
+    public sealed class BackupService
     {
         public const int MaxBackups = 5;
 
-        private readonly IDriveBackupClient _client;
+        private readonly IBackupStore _store;
         private readonly VaultService _vault;
 
-        public DriveBackupService(IDriveBackupClient client, VaultService vault)
+        public BackupService(IBackupStore store, VaultService vault)
         {
-            _client = client ?? throw new ArgumentNullException(nameof(client));
+            _store = store ?? throw new ArgumentNullException(nameof(store));
             _vault = vault ?? throw new ArgumentNullException(nameof(vault));
         }
 
         public static string BuildFileName(DateTime now) =>
             $"doitnow-vault-{now:yyyyMMdd-HHmmss}.ditvault";
 
-        public async Task<DriveBackupFile> BackupAsync(
+        public async Task<VaultBackupFile> BackupAsync(
             string password,
             DateTime now,
             CancellationToken cancellationToken = default)
@@ -44,7 +45,7 @@ namespace DoItNow.Services.Drive
                 await _vault.ExportAsync(tempPath, password);
                 var content = await File.ReadAllBytesAsync(tempPath, cancellationToken);
 
-                var uploaded = await _client.UploadAsync(
+                var uploaded = await _store.UploadAsync(
                     BuildFileName(now), content, cancellationToken);
 
                 await TrimAsync(cancellationToken);
@@ -65,7 +66,7 @@ namespace DoItNow.Services.Drive
             if (string.IsNullOrWhiteSpace(password))
                 throw new ArgumentException("La contraseña del respaldo es obligatoria.", nameof(password));
 
-            var content = await _client.DownloadAsync(fileId, cancellationToken);
+            var content = await _store.DownloadAsync(fileId, cancellationToken);
 
             var tempPath = Path.Combine(
                 Path.GetTempPath(), $"doitnow-restore-{Guid.NewGuid():N}.ditvault");
@@ -81,17 +82,17 @@ namespace DoItNow.Services.Drive
             }
         }
 
-        public Task<IReadOnlyList<DriveBackupFile>> ListAsync(
+        public Task<IReadOnlyList<VaultBackupFile>> ListAsync(
             CancellationToken cancellationToken = default) =>
-            _client.ListAsync(cancellationToken);
+            _store.ListAsync(cancellationToken);
 
         public Task DeleteAsync(string fileId, CancellationToken cancellationToken = default) =>
-            _client.DeleteAsync(fileId, cancellationToken);
+            _store.DeleteAsync(fileId, cancellationToken);
 
         /// <summary>Elimina los respaldos más antiguos y conserva los <see cref="MaxBackups"/> más recientes.</summary>
         public async Task TrimAsync(CancellationToken cancellationToken = default)
         {
-            var files = await _client.ListAsync(cancellationToken);
+            var files = await _store.ListAsync(cancellationToken);
 
             var expired = files
                 .OrderByDescending(f => f.ModifiedAt)
@@ -100,7 +101,7 @@ namespace DoItNow.Services.Drive
 
             foreach (var file in expired)
             {
-                await _client.DeleteAsync(file.Id, cancellationToken);
+                await _store.DeleteAsync(file.Id, cancellationToken);
             }
         }
 

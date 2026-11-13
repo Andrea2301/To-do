@@ -1,6 +1,5 @@
-using DoItNow.Models;
+using DoItNow.Services.Backup;
 using System;
-using System.Collections.Generic;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
@@ -8,8 +7,9 @@ using System.Threading.Tasks;
 namespace DoItNow.Services.Drive
 {
     /// <summary>
-    /// Punto único para conectar la cuenta de Google y operar los respaldos. Guarda el
-    /// client secret y el refresh token cifrados con DPAPI y renueva el access token solo.
+    /// Punto único para conectar la cuenta de Google y crear el almacén de respaldos.
+    /// Guarda el client secret y el refresh token cifrados con DPAPI y renueva el access
+    /// token solo.
     /// </summary>
     public sealed class DriveBackupCoordinator
     {
@@ -17,19 +17,16 @@ namespace DoItNow.Services.Drive
         public const string KeyClientSecret = "Drive_ClientSecret";
         public const string KeyRefreshToken = "Drive_RefreshToken";
 
-        private readonly VaultService _vault;
         private readonly SettingsService _settings;
         private readonly GoogleDriveAuth _auth;
         private readonly HttpClient _http;
         private GoogleToken? _token;
 
         public DriveBackupCoordinator(
-            VaultService vault,
             SettingsService? settings = null,
             GoogleDriveAuth? auth = null,
             HttpClient? http = null)
         {
-            _vault = vault ?? throw new ArgumentNullException(nameof(vault));
             _settings = settings ?? new SettingsService();
             _auth = auth ?? new GoogleDriveAuth();
             _http = http ?? new HttpClient { Timeout = TimeSpan.FromMinutes(5) };
@@ -103,34 +100,8 @@ namespace DoItNow.Services.Drive
             await _settings.SetSettingAsync(KeyRefreshToken, string.Empty);
         }
 
-        public async Task<IReadOnlyList<DriveBackupFile>> ListAsync(
-            CancellationToken cancellationToken = default)
-        {
-            var service = await CreateServiceAsync();
-            return await service.ListAsync(cancellationToken);
-        }
-
-        public async Task<DriveBackupFile> BackupAsync(
-            string password, DateTime now, CancellationToken cancellationToken = default)
-        {
-            var service = await CreateServiceAsync();
-            return await service.BackupAsync(password, now, cancellationToken);
-        }
-
-        public async Task<int> RestoreAsync(
-            string fileId, string password, CancellationToken cancellationToken = default)
-        {
-            var service = await CreateServiceAsync();
-            return await service.RestoreAsync(fileId, password, cancellationToken);
-        }
-
-        public async Task DeleteAsync(string fileId, CancellationToken cancellationToken = default)
-        {
-            var service = await CreateServiceAsync();
-            await service.DeleteAsync(fileId, cancellationToken);
-        }
-
-        private async Task<DriveBackupService> CreateServiceAsync()
+        /// <summary>Crea el almacén de Drive; exige una cuenta conectada.</summary>
+        public async Task<IBackupStore> CreateStoreAsync()
         {
             if (!await IsConnectedAsync())
             {
@@ -138,8 +109,7 @@ namespace DoItNow.Services.Drive
                     "Conecta tu cuenta de Google antes de usar los respaldos.");
             }
 
-            var client = new GoogleDriveClient(_http, GetAccessTokenAsync, () => _token = null);
-            return new DriveBackupService(client, _vault);
+            return new GoogleDriveClient(_http, GetAccessTokenAsync, () => _token = null);
         }
 
         private async Task<string> GetAccessTokenAsync(CancellationToken cancellationToken)

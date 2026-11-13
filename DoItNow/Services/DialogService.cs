@@ -53,12 +53,12 @@ namespace DoItNow.Services
                 MessageBox.Show(message, title, MessageBoxButton.OK, MessageBoxImage.Warning);
         }
 
-        /// <summary>Abre la ventana de respaldos en Google Drive. Devuelve true si se restauró algo.</summary>
-        public static bool ShowDriveBackup(VaultService vault)
+        /// <summary>Abre la ventana de respaldos del vault. Devuelve true si se restauró algo.</summary>
+        public static bool ShowBackups(VaultService vault)
         {
-            var window = new DriveBackupWindow(vault)
+            var window = new BackupWindow(vault)
             {
-                Owner = Application.Current?.MainWindow
+                Owner = ActiveOwner()
             };
 
             window.ShowDialog();

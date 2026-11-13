@@ -186,9 +186,9 @@
                             Content="⚙ .env" Margin="0,0,6,0"
                             ToolTip="Importar variables de un archivo .env como entradas cifradas"
                             Visibility="{Binding IsUnlocked, Converter={StaticResource BoolToVis}}"/>
-                    <Button Command="{Binding OpenDriveBackupCommand}" Style="{StaticResource VaultGhostButton}"
-                            Content="⛅ Drive" Margin="0,0,6,0"
-                            ToolTip="Respaldar el vault cifrado en Google Drive"
+                    <Button Command="{Binding OpenBackupsCommand}" Style="{StaticResource VaultGhostButton}"
+                            Content="🗄 Respaldos" Margin="0,0,6,0"
+                            ToolTip="Respaldar el vault cifrado en una carpeta o en Google Drive"
                             Visibility="{Binding IsUnlocked, Converter={StaticResource BoolToVis}}"/>
                     <Button Command="{Binding SetupMasterPasswordCommand}" Style="{StaticResource VaultGhostButton}"
                             Content="🔐 Activar contraseña" Margin="0,0,6,0"

@@ -1,6 +1,6 @@
 using DoItNow.Models;
 using DoItNow.Services;
-using DoItNow.Services.Drive;
+using DoItNow.Services.Backup;
 using System;
 using System.Linq;
 using System.Text;
@@ -9,7 +9,7 @@ using Xunit;
 
 namespace DoItNow.Tests;
 
-public class DriveBackupServiceTests
+public class BackupServiceTests
 {
     private const string Secret = "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY";
 
@@ -39,7 +39,7 @@ public class DriveBackupServiceTests
     [Fact]
     public void BuildFileName_UsesSortableTimestamp()
     {
-        var name = DriveBackupService.BuildFileName(new DateTime(2026, 3, 4, 5, 6, 7));
+        var name = BackupService.BuildFileName(new DateTime(2026, 3, 4, 5, 6, 7));
 
         Assert.Equal("doitnow-vault-20260304-050607.ditvault", name);
     }
@@ -49,16 +49,16 @@ public class DriveBackupServiceTests
     {
         using var env = new TestEnvironment();
         var vault = await CreateVaultWithEntryAsync();
-        var client = new FakeDriveClient();
-        var service = new DriveBackupService(client, vault);
+        var store = new FakeBackupStore();
+        var service = new BackupService(store, vault);
 
         var uploaded = await service.BackupAsync(
             "clave-respaldo", new DateTime(2026, 3, 4, 5, 6, 7));
 
         Assert.Equal("doitnow-vault-20260304-050607.ditvault", uploaded.Name);
-        Assert.Single(client.Files);
+        Assert.Single(store.Files);
 
-        var content = Assert.IsType<byte[]>(client.LastUploadedContent);
+        var content = Assert.IsType<byte[]>(store.LastUploadedContent);
         var text = Encoding.UTF8.GetString(content);
         Assert.DoesNotContain(Secret, text);
         Assert.DoesNotContain("AWS Producción", text);
@@ -70,7 +70,7 @@ public class DriveBackupServiceTests
     {
         using var env = new TestEnvironment();
         var vault = await CreateVaultWithEntryAsync();
-        var service = new DriveBackupService(new FakeDriveClient(), vault);
+        var service = new BackupService(new FakeBackupStore(), vault);
 
         await Assert.ThrowsAsync<ArgumentException>(
             () => service.BackupAsync("   ", DateTime.Now));
@@ -81,20 +81,20 @@ public class DriveBackupServiceTests
     {
         using var env = new TestEnvironment();
         var vault = await CreateVaultWithEntryAsync();
-        var client = new FakeDriveClient();
+        var store = new FakeBackupStore();
 
-        for (var i = 0; i < DriveBackupService.MaxBackups; i++)
+        for (var i = 0; i < BackupService.MaxBackups; i++)
         {
-            client.Seed($"old-{i}", $"doitnow-vault-2025{i:00}.ditvault",
+            store.Seed($"old-{i}", $"doitnow-vault-2025{i:00}.ditvault",
                 Array.Empty<byte>(), DateTimeOffset.UtcNow.AddDays(-30 + i));
         }
 
-        var service = new DriveBackupService(client, vault);
+        var service = new BackupService(store, vault);
         await service.BackupAsync("clave-respaldo", DateTime.Now);
 
-        Assert.Equal(DriveBackupService.MaxBackups, client.Files.Count);
-        Assert.Single(client.Deleted);
-        Assert.Equal("old-0", client.Deleted[0]);
+        Assert.Equal(BackupService.MaxBackups, store.Files.Count);
+        Assert.Single(store.Deleted);
+        Assert.Equal("old-0", store.Deleted[0]);
     }
 
     [Fact]
@@ -102,21 +102,21 @@ public class DriveBackupServiceTests
     {
         using var env = new TestEnvironment();
         var vault = await CreateVaultWithEntryAsync();
-        var client = new FakeDriveClient();
+        var store = new FakeBackupStore();
 
         for (var i = 0; i < 8; i++)
         {
-            client.Seed($"f{i}", $"doitnow-vault-2025{i:00}.ditvault",
+            store.Seed($"f{i}", $"doitnow-vault-2025{i:00}.ditvault",
                 Array.Empty<byte>(), DateTimeOffset.UtcNow.AddDays(i));
         }
 
-        var service = new DriveBackupService(client, vault);
+        var service = new BackupService(store, vault);
         await service.TrimAsync();
 
-        Assert.Equal(DriveBackupService.MaxBackups, client.Files.Count);
-        Assert.Equal(3, client.Deleted.Count);
-        Assert.Equal(new[] { "f0", "f1", "f2" }, client.Deleted.OrderBy(x => x));
-        Assert.All(client.Files.Keys, id => Assert.DoesNotContain(id, client.Deleted));
+        Assert.Equal(BackupService.MaxBackups, store.Files.Count);
+        Assert.Equal(3, store.Deleted.Count);
+        Assert.Equal(new[] { "f0", "f1", "f2" }, store.Deleted.OrderBy(x => x));
+        Assert.All(store.Files.Keys, id => Assert.DoesNotContain(id, store.Deleted));
     }
 
     [Fact]
@@ -126,15 +126,15 @@ public class DriveBackupServiceTests
         env.Use("source.db");
 
         var source = await CreateVaultWithEntryAsync("AWS Staging");
-        var client = new FakeDriveClient();
-        var sourceService = new DriveBackupService(client, source);
+        var store = new FakeBackupStore();
+        var sourceService = new BackupService(store, source);
 
         var uploaded = await sourceService.BackupAsync(
             "clave-respaldo", new DateTime(2026, 3, 4, 5, 6, 7));
 
         env.Use("target.db");
         var target = await CreateUnlockedVaultAsync();
-        var targetService = new DriveBackupService(client, target);
+        var targetService = new BackupService(store, target);
 
         var imported = await targetService.RestoreAsync(uploaded.Id, "clave-respaldo");
 
@@ -149,8 +149,8 @@ public class DriveBackupServiceTests
     {
         using var env = new TestEnvironment();
         var vault = await CreateVaultWithEntryAsync();
-        var client = new FakeDriveClient();
-        var service = new DriveBackupService(client, vault);
+        var store = new FakeBackupStore();
+        var service = new BackupService(store, vault);
 
         var uploaded = await service.BackupAsync("correcta", DateTime.Now);
 
@@ -161,15 +161,15 @@ public class DriveBackupServiceTests
     }
 
     [Fact]
-    public async Task ListAsync_DelegatesToClient()
+    public async Task ListAsync_DelegatesToStore()
     {
         using var env = new TestEnvironment();
         var vault = await CreateVaultWithEntryAsync();
-        var client = new FakeDriveClient()
+        var store = new FakeBackupStore()
             .Seed("b", "doitnow-vault-20260202.ditvault", Array.Empty<byte>(), DateTimeOffset.UtcNow)
             .Seed("a", "doitnow-vault-20260101.ditvault", Array.Empty<byte>(), DateTimeOffset.UtcNow.AddDays(-1));
 
-        var service = new DriveBackupService(client, vault);
+        var service = new BackupService(store, vault);
         var files = await service.ListAsync();
 
         Assert.Equal(new[] { "b", "a" }, files.Select(f => f.Id));

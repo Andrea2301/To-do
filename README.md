@@ -51,7 +51,7 @@ screenshots.
 | Planning a sprint day | Dashboard calendar, daily agenda and quick filters — no backlog grooming |
 | Reading a spec or issue export | Document mode extracts tasks from PDF, Word, Markdown or plain text |
 | Jotting a snippet | Code notes with highlighting for C#, JSON, SQL, JS, Python, PowerShell, XML and Markdown |
-| Rotating credentials | Encrypted vault with AWS CSV/INI import, `.env` import, encrypted attachments and encrypted Google Drive backups |
+| Rotating credentials | Encrypted vault with AWS CSV/INI import, `.env` import, encrypted attachments and encrypted backups to a synced folder or Google Drive |
 | Working on proprietary code | Local Ollama inference — prompts and code never leave the machine |
 | Sharing a PC | Local profiles with optional password and separate databases |
 
@@ -83,8 +83,9 @@ screenshots.
 - **Calendar & agenda** — a fully working WPF `CalendarItem` template (`PART_MonthView`
   / `PART_YearView`) with per-day task filtering, integrated into the dashboard.
 - **Portable and cloud encrypted backup** — export the vault to a password-protected
-  `.ditvault` file, or push the same encrypted file to your own Google Drive. No DoItNow
-  account and no plaintext in the cloud.
+  `.ditvault` file, or keep the newest five copies in a synchronized folder (OneDrive,
+  Dropbox, desktop Drive) or your own Google Drive. No DoItNow account and no plaintext
+  in the cloud.
 - **Nine selectable themes** — Claro, Oscuro, Sepia, Medianoche, Océano, Nord, Rosé,
   Cinnamoroll and Alto contraste. Semantic brush tokens are swapped at runtime and persisted across
   sessions, with startup CLI override support.
@@ -147,14 +148,31 @@ is unlocked.
 - **`.env` import** — read a dotenv file, create one encrypted entry per key, update
   entries with the same name instead of duplicating them, and keep the original file
   attached. Supports comments, `export`, quotes and inline comments.
-- **Google Drive backups** — upload the encrypted `.ditvault` to an app-private Drive
-  folder with OAuth, keep the newest five backups and restore any of them with its backup
-  password.
+- **Encrypted vault backups** — write the password-protected `.ditvault` to a synchronized
+  folder (OneDrive, Dropbox, desktop Drive) or to an app-private Google Drive folder, keep
+  the newest five backups and restore any of them with its backup password.
 
-### Google Drive backups
+### Vault backups
 
-Back up the vault to your own Google Drive without handing DoItNow access to the rest of
-your files. Open the vault and click **⛅ Drive**.
+Open the vault and click **🗄 Respaldos**. Every backup is encrypted with a password you
+choose right before it leaves the app; that password is never stored, so the destination
+only ever holds ciphertext.
+
+- **Synchronized folder (default)** — DoItNow writes `doitnow-vault-<timestamp>.ditvault`
+  into a folder you pick. It suggests `OneDrive\DoItNow\Backups` when OneDrive is present
+  and falls back to `Documents\DoItNow\Backups`. Your OneDrive, Dropbox or desktop Drive
+  client uploads the file on its own: no account, token or OAuth client required.
+- **Automatic retention** — after a successful backup the newest five files are kept and
+  older ones are removed.
+- **Restore in place** — pick any backup from the list and enter its password. Entries with
+  the same name are updated; the rest of the vault is preserved.
+- **Same portable format** — `.ditvault` files created here are identical to **Exportar**,
+  so a backup can also be imported by hand on another machine.
+
+#### Google Drive (optional)
+
+Drive is a second destination in the same window (**Respaldos → Google Drive**). It needs
+your own free OAuth client, so use it only if you can create one.
 
 - **OAuth 2.0, no shared passwords** — sign in through the browser with Authorization Code
   + PKCE and a loopback redirect (`http://127.0.0.1:<port>`). DoItNow never sees your
@@ -165,8 +183,6 @@ your files. Open the vault and click **⛅ Drive**.
   `.ditvault` and uploaded as opaque bytes. Drive stores ciphertext only.
 - **Separate backup password** — DoItNow asks for a password when you back up or restore.
   It is never stored, so a compromised Google account still cannot read the vault.
-- **Automatic retention** — after a successful upload the newest five backups are kept and
-  older ones are removed.
 - **DPAPI-protected tokens** — the OAuth client secret and refresh token are encrypted with
   Windows DPAPI for the current user and stored in the local settings table. Access tokens
   stay in memory and are refreshed automatically.
@@ -181,8 +197,8 @@ DoItNow ships without Google credentials; use your own free OAuth client:
 3. Configure the OAuth consent screen as **External**, add your Google account as a test
    user and keep the app in *Testing*. Personal use does not require verification.
 4. Create credentials → **OAuth client ID** → application type **Desktop app**.
-5. In DoItNow open the vault, click **⛅ Drive**, paste the client ID and client secret,
-   save, then click **Conectar cuenta** and approve access in the browser.
+5. In DoItNow open the vault, click **🗄 Respaldos → Google Drive**, paste the client ID
+   and client secret, save, then click **Conectar cuenta** and approve access in the browser.
 
 The refresh token is bound to that OAuth client. Changing the client ID disconnects the
 account and asks you to authorize again.
@@ -239,7 +255,7 @@ without a restart.
 | Persistence | SQLite + EF Core 9 |
 | Editor | AvalonEdit (syntax highlighting, line numbers) |
 | Security | AES-256-GCM + PBKDF2-SHA256, Windows DPAPI |
-| Cloud backup | Google Drive v3 API (`drive.appdata`) with OAuth 2.0 + PKCE |
+| Cloud backup | Synchronized folder, plus optional Google Drive v3 API (`drive.appdata`) with OAuth 2.0 + PKCE |
 | Identity | Local profiles with optional PBKDF2 password verifier |
 | AI | Ollama (local) + Groq Cloud (OpenAI-compatible API) |
 | Icons | FontAwesome.WPF / FontAwesome.Sharp |
@@ -282,9 +298,10 @@ DoItNow/
 │  ├─ MainWindow.xaml(.cs)          # Shell, navigation, toasts, window chrome
 │  ├─ Views/                        # Login, Tasks, Notes, Vault, AI workspace, Settings
 │  ├─ ViewModels/                   # Main + per-module view models
-│  ├─ Models/                       # Task, SubTask, Chat, Settings, VaultEntry, VaultAttachment, CodeNote, AppProfile, DriveBackupFile
+│  ├─ Models/                       # Task, SubTask, Chat, Settings, VaultEntry, VaultAttachment, CodeNote, AppProfile, VaultBackupFile
 │  ├─ Services/                     # Task, Notes, Vault, Crypto, AWS/.env importers, Profiles, AI, Theme, Dialog, Toast
-│  ├─ Services/Drive/               # Google OAuth (PKCE), Drive client, backup/restore, DPAPI token storage
+│  ├─ Services/Backup/              # Shared backup orchestration (BackupService) + folder and store contracts
+│  ├─ Services/Drive/               # Google OAuth (PKCE), Drive client, DPAPI token storage
 │  ├─ Controls/                     # CodeEditor (AvalonEdit host with theme-aware colors)
 │  ├─ Converters/                   # Theme-aware value converters
 │  ├─ Data/                         # EF Core DbContext + initialization
@@ -301,7 +318,7 @@ DoItNow/
 │     ├─ Themes/HighContrastTheme.xaml  # Semantic palette: Alto contraste
 │     ├─ ButtonStyle.xaml           # Buttons, combo boxes, inputs
 │     └─ CalendarStyles.xaml        # Custom WPF calendar template
-├─ DoItNow.Tests/                   # xUnit suite: crypto, vault, profiles, AWS/.env parsers, Drive auth/client/backup
+├─ DoItNow.Tests/                   # xUnit suite: crypto, vault, profiles, AWS/.env parsers, backup stores, Drive auth/client
 ├─ docs/screenshots/                # Selected portfolio screenshots
 └─ DoItNow.sln
 ```
@@ -415,9 +432,11 @@ Notes:
 - `.ditvault` exports are encrypted with a separate password using the same primitives,
   so backups remain safe when moved through cloud storage or email. Format v2 adds
   attachments; v1 files still import.
-- Google Drive backups upload those same `.ditvault` bytes to the app's hidden
-  `appDataFolder`. Google only sees ciphertext; the backup password never leaves the
-  machine. OAuth tokens are stored with DPAPI for the current Windows user.
+- Vault backups write those same `.ditvault` bytes to a folder you choose; a client such
+  as OneDrive, Dropbox or desktop Drive syncs them. The folder only sees ciphertext.
+- Google Drive backups upload the same bytes to the app's hidden `appDataFolder`. Google
+  only sees ciphertext; the backup password never leaves the machine. OAuth tokens are
+  stored with DPAPI for the current Windows user.
 
 ### Profile password (app lock)
 
@@ -523,6 +542,7 @@ Adding a new theme means creating one dictionary with the same keys and register
 - [ ] Recurring tasks and reminders
 - [ ] Command palette (`Ctrl+K`) for navigation and quick capture
 - [x] Import `.env` files into the encrypted vault
+- [x] Encrypted vault backups to a synchronized folder (5-version retention)
 - [x] Encrypted vault backup to Google Drive over OAuth (app-private folder, 5-version retention)
 - [ ] CSV / Markdown export of tasks and code notes
 - [ ] Optional cloud sync backend

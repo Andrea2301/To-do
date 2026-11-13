@@ -856,24 +856,24 @@ namespace DoItNow.ViewModels
             return string.Join(Environment.NewLine, lines);
         }
 
-        // --- Respaldo en Google Drive ---
+        // --- Respaldos del vault ---
 
         [RelayCommand]
-        public async Task OpenDriveBackupAsync()
+        public async Task OpenBackupsAsync()
         {
             if (!IsUnlocked) return;
 
             try
             {
-                if (DialogService.ShowDriveBackup(_vaultService))
+                if (DialogService.ShowBackups(_vaultService))
                 {
                     await LoadEntriesAsync();
-                    StatusMessage = "✓ Bóveda actualizada desde Google Drive.";
+                    StatusMessage = "✓ Bóveda actualizada desde un respaldo.";
                 }
             }
             catch (Exception ex)
             {
-                StatusMessage = $"❌ No se pudo abrir Google Drive: {ex.Message}";
+                StatusMessage = $"❌ No se pudieron abrir los respaldos: {ex.Message}";
             }
         }
 

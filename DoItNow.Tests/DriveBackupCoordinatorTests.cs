@@ -12,21 +12,12 @@ namespace DoItNow.Tests;
 
 public class DriveBackupCoordinatorTests
 {
-    private static async Task<VaultService> CreateUnlockedVaultAsync()
-    {
-        var vault = new VaultService();
-        await vault.InitializeAsync();
-        Assert.True(vault.IsUnlocked);
-        return vault;
-    }
-
     [Fact]
     public async Task SaveCredentials_StoresClientSecretEncrypted()
     {
         using var env = new TestEnvironment();
-        var vault = await CreateUnlockedVaultAsync();
         var settings = new SettingsService();
-        var coordinator = new DriveBackupCoordinator(vault, settings);
+        var coordinator = new DriveBackupCoordinator(settings);
 
         Assert.False(await coordinator.HasCredentialsAsync());
 
@@ -49,9 +40,8 @@ public class DriveBackupCoordinatorTests
     public async Task ChangingClientId_DisconnectsAccount()
     {
         using var env = new TestEnvironment();
-        var vault = await CreateUnlockedVaultAsync();
         var settings = new SettingsService();
-        var coordinator = new DriveBackupCoordinator(vault, settings);
+        var coordinator = new DriveBackupCoordinator(settings);
 
         await coordinator.SaveCredentialsAsync("client-uno", "secret-uno");
         await settings.SetSettingAsync(
@@ -68,9 +58,8 @@ public class DriveBackupCoordinatorTests
     public async Task SavingSameClientId_KeepsSession()
     {
         using var env = new TestEnvironment();
-        var vault = await CreateUnlockedVaultAsync();
         var settings = new SettingsService();
-        var coordinator = new DriveBackupCoordinator(vault, settings);
+        var coordinator = new DriveBackupCoordinator(settings);
 
         await coordinator.SaveCredentialsAsync("client-uno", "secret-uno");
         await settings.SetSettingAsync(
@@ -85,9 +74,8 @@ public class DriveBackupCoordinatorTests
     public async Task Disconnect_ClearsRefreshToken()
     {
         using var env = new TestEnvironment();
-        var vault = await CreateUnlockedVaultAsync();
         var settings = new SettingsService();
-        var coordinator = new DriveBackupCoordinator(vault, settings);
+        var coordinator = new DriveBackupCoordinator(settings);
 
         await coordinator.SaveCredentialsAsync("client-uno", "secret-uno");
         await settings.SetSettingAsync(
@@ -100,14 +88,13 @@ public class DriveBackupCoordinatorTests
     }
 
     [Fact]
-    public async Task ListAsync_WithoutConnection_Throws()
+    public async Task CreateStoreAsync_WithoutConnection_Throws()
     {
         using var env = new TestEnvironment();
-        var vault = await CreateUnlockedVaultAsync();
-        var coordinator = new DriveBackupCoordinator(vault, new SettingsService());
+        var coordinator = new DriveBackupCoordinator(new SettingsService());
 
         var error = await Assert.ThrowsAsync<InvalidOperationException>(
-            () => coordinator.ListAsync());
+            () => coordinator.CreateStoreAsync());
 
         Assert.Contains("Conecta tu cuenta", error.Message);
     }
@@ -116,7 +103,6 @@ public class DriveBackupCoordinatorTests
     public async Task ExpiredRefreshToken_DisconnectsAndShowsFriendlyMessage()
     {
         using var env = new TestEnvironment();
-        var vault = await CreateUnlockedVaultAsync();
         var settings = new SettingsService();
 
         var handler = new FakeHttpHandler().Enqueue(
@@ -129,14 +115,16 @@ public class DriveBackupCoordinatorTests
             });
 
         var auth = new GoogleDriveAuth(new HttpClient(handler));
-        var coordinator = new DriveBackupCoordinator(vault, settings, auth);
+        var coordinator = new DriveBackupCoordinator(settings, auth);
 
         await coordinator.SaveCredentialsAsync("client-uno", "secret-uno");
         await settings.SetSettingAsync(
             DriveBackupCoordinator.KeyRefreshToken, SecretProtector.Protect("refresh-vencido"));
 
+        var store = await coordinator.CreateStoreAsync();
+
         var error = await Assert.ThrowsAsync<InvalidOperationException>(
-            () => coordinator.ListAsync());
+            () => store.ListAsync());
 
         Assert.Contains("sesión de Google expiró", error.Message);
         Assert.False(await coordinator.IsConnectedAsync());

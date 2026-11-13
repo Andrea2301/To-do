@@ -2,8 +2,8 @@ using System;
 
 namespace DoItNow.Models
 {
-    /// <summary>Archivo de respaldo del vault que vive en la carpeta oculta de Drive.</summary>
-    public sealed class DriveBackupFile
+    /// <summary>Archivo de respaldo del vault, ya sea en una carpeta local o en Google Drive.</summary>
+    public sealed class VaultBackupFile
     {
         public string Id { get; init; } = string.Empty;
         public string Name { get; init; } = string.Empty;

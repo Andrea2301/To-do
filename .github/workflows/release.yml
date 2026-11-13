@@ -61,6 +61,9 @@ jobs:
             Optional: copy `appsettings.example.json` to `appsettings.json` to preselect a theme
             or an AI provider. The file is never overwritten by the app.
 
-            Google Drive backups use your own free OAuth client. See the
+            Encrypted vault backups work without any account: choose a folder inside OneDrive,
+            Dropbox or desktop Drive and your sync client uploads the password-protected
+            `.ditvault` files. Google Drive is also available as an optional second
+            destination using your own free OAuth client — see the
             [Google Drive setup](https://github.com/Andrea2301/To-do#google-drive-setup)
             section of the README for the five-step configuration.
