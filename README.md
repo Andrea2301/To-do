@@ -1,11 +1,12 @@
 # DoItNow
 
-**A calm, AI-assisted productivity desktop app built with WPF and .NET 8.**
+**A local-first workspace for developers: tasks, code notes, an encrypted secrets vault
+and on-device AI. Built with WPF and .NET 8.**
 
-DoItNow brings tasks, calendar, daily planning, a hybrid AI assistant, an encrypted key
-vault and a real code editor into a single focused workspace. It ships with local
-profiles, a hand-crafted design system, nine selectable themes, meaningful animations,
-and a local-first data model.
+DoItNow puts the things a developer reaches for all day in one window: a daily planner, a
+syntax-highlighted code notes editor, an AES-256-GCM vault for API keys and AWS
+credentials, offline document conversion, and a hybrid AI assistant that can run entirely
+on your machine. Local profiles, nine themes, SQLite persistence, no account required.
 
 <p>
   <img alt=".NET 8" src="https://img.shields.io/badge/.NET-8.0-512BD4?logo=dotnet&logoColor=white">
@@ -19,10 +20,23 @@ and a local-first data model.
 
 ## Why DoItNow
 
-Most task apps ask you to adapt to their workflow. DoItNow was built around a simple
-idea: **plan the day, not the backlog**. The dashboard pairs a real calendar with a
-tight daily agenda and a visual plan board, while the AI assistant helps break work
-down without leaving the app.
+Developers rarely lose time to a missing kanban board. They lose it to context switching:
+the ticket lives in one app, the snippet in another, the API key in a `.env` file, the
+spec in a PDF, and the assistant in a browser tab that ships your code to someone else's
+server.
+
+DoItNow collapses that loop into a single local-first desktop app:
+
+- **Plan the day, not the backlog** — a real calendar, a tight agenda and quick filters
+  instead of weeks of grooming.
+- **Keep code notes where the code is** — syntax highlighting for eight languages and
+  export to real source files.
+- **Keep secrets out of `.env` files and chat logs** — an encrypted vault that imports AWS
+  credentials and stores credential files as encrypted attachments.
+- **Turn specs into tasks** — drop a PDF, Word or Markdown file and let the assistant
+  extract actionable items, offline if you prefer.
+- **Run AI on proprietary code** — local Ollama inference by default, Groq Cloud as an
+  optional fallback.
 
 It is also a complete desktop engineering showcase: MVVM, dependency-light services,
 local SQLite persistence, a semantic theming system, and reproducible demo data for
@@ -30,35 +44,48 @@ screenshots.
 
 ---
 
+## Built for developer workflows
+
+| You are… | DoItNow gives you… |
+| --- | --- |
+| Planning a sprint day | Dashboard calendar, daily agenda and quick filters — no backlog grooming |
+| Reading a spec or issue export | Document mode extracts tasks from PDF, Word, Markdown or plain text |
+| Jotting a snippet | Code notes with highlighting for C#, JSON, SQL, JS, Python, PowerShell, XML and Markdown |
+| Rotating credentials | Encrypted vault with AWS CSV/INI import and encrypted attachments |
+| Working on proprietary code | Local Ollama inference — prompts and code never leave the machine |
+| Sharing a PC | Local profiles with optional password and separate databases |
+
+---
+
 ## Highlights
 
-- **Local profiles with optional password** — a sign-in screen keeps separate workspaces
-  on the same machine. Each profile owns its database, settings, chat history and vault;
-  the password is stored only as a PBKDF2-SHA256 verifier. The first profile adopts any
-  database created by older versions, with no manual migration.
-- **Nine selectable themes** — Claro, Oscuro, Sepia, Medianoche, Océano, Nord, Rosé,
-  Cinnamoroll and Alto contraste. Semantic brush tokens are swapped at runtime and persisted across
-  sessions, with startup CLI override support.
-- **Live dashboard** — greeting, real today/week dates, pending/completed metrics and
-  an animated progress bar driven by the database.
-- **Task management** — create, edit, complete, delete, search and filter by category
-  and priority, with toast feedback and an inline creation form.
-- **Calendar & agenda** — a fully working WPF `CalendarItem` template (`PART_MonthView`
-  / `PART_YearView`) with per-day task filtering, integrated into the dashboard.
+- **Encrypted key vault** — store API keys, tokens, connection strings and passwords
+  protected with AES-256-GCM. Optional master password (PBKDF2-SHA256) or transparent
+  protection via Windows DPAPI; secrets stay masked until you reveal them.
+- **Code notes with real highlighting** — an AvalonEdit-powered editor with line
+  numbers, syntax highlighting for C#, JSON, SQL, JavaScript, Python, PowerShell, XML
+  and Markdown, clipboard-aware pasting and file export.
 - **Hybrid AI workspace** — local [Ollama](https://ollama.com) inference with automatic
   fallback to [Groq Cloud](https://console.groq.com), in one place: a conversational
   assistant and a document mode that turns notes or text files into actionable tasks.
 - **Offline document conversion** — convert PDF, Word, Excel, CSV, JSON, Markdown and
   plain text entirely on your machine. Batch queue, drag and drop, live preview and a
   configurable destination folder. No uploads, no accounts, no third-party services.
-- **Encrypted key vault** — store API keys, tokens and passwords protected with
-  AES-256-GCM. Optional master password (PBKDF2-SHA256) or transparent protection via
-  Windows DPAPI; secrets stay masked until you reveal them.
-- **Code notes with real highlighting** — an AvalonEdit-powered editor with line
-  numbers, syntax highlighting for C#, JSON, SQL, JavaScript, Python, PowerShell, XML
-  and Markdown, clipboard-aware pasting and file export.
+- **Local profiles with optional password** — a sign-in screen keeps separate workspaces
+  on the same machine. Each profile owns its database, settings, chat history and vault;
+  the password is stored only as a PBKDF2-SHA256 verifier. The first profile adopts any
+  database created by older versions, with no manual migration.
+- **Live dashboard** — greeting, real today/week dates, pending/completed metrics and
+  an animated progress bar driven by the database.
+- **Task management** — create, edit, complete, delete, search and filter by category
+  and priority, with toast feedback and an inline creation form.
+- **Calendar & agenda** — a fully working WPF `CalendarItem` template (`PART_MonthView`
+  / `PART_YearView`) with per-day task filtering, integrated into the dashboard.
 - **Portable encrypted backup** — export the vault to a password-protected
   `.ditvault` file and import it on another machine. No cloud account required.
+- **Nine selectable themes** — Claro, Oscuro, Sepia, Medianoche, Océano, Nord, Rosé,
+  Cinnamoroll and Alto contraste. Semantic brush tokens are swapped at runtime and persisted across
+  sessions, with startup CLI override support.
 - **Micro-interactions** — section transitions, hover-lift cards, animated toasts,
   a window entrance animation and a theme-aware startup veil that never delays loading.
 - **Desktop details** — a multi-size app icon for the executable, window and taskbar;
@@ -91,6 +118,31 @@ separate (personal, work, demos).
 - The rail's sign-out button returns to the profile screen; the profile's window bounds
   and last section are saved before the session is closed.
 
+### Code notes
+
+A dedicated code editor replaces the Windows notepad for snippets and technical notes.
+It keeps line numbers, highlights syntax per language, tracks unsaved changes, and
+exports real source files with the right extension. Everything is stored locally, so it
+works completely offline.
+
+### Encrypted key vault
+
+Store API keys, tokens, connection strings and passwords in an encrypted vault. Secrets
+are never shown in plain text by default and are only decrypted in memory when the vault
+is unlocked.
+
+- **Transparent mode** — on first launch the vault is protected by a random key wrapped
+  with Windows DPAPI (bound to the current Windows user). No password to remember.
+- **Master password mode** — derive the key with PBKDF2-SHA256 and unlock every entry
+  with a single password. Changing the password re-encrypts the whole vault.
+- **Encrypted export/import** — move the vault between machines with a `.ditvault` file
+  protected by its own password.
+- **Encrypted attachments** — attach credential files, certificates or JSON keys to any
+  entry. They are encrypted with the same AES-GCM key, capped at 10 MB per file and
+  included in `.ditvault` backups.
+- **AWS credentials import** — read an IAM access-key CSV export or an `~/.aws/credentials`
+  (INI) file, create or update the matching entries, and keep the original file attached.
+
 ### Command center
 
 The dashboard is the single planning hub: a real month calendar, the daily agenda, quick
@@ -118,31 +170,6 @@ One module with two modes, switched from a segmented control at the top:
     preview the result and choose the destination folder. Nothing is uploaded.
   - **Extract tasks** — load a text-like document, preview it, and ask the active AI
     provider to extract tasks or summarize its content.
-
-### Code notes
-
-A dedicated code editor replaces the Windows notepad for snippets and technical notes.
-It keeps line numbers, highlights syntax per language, tracks unsaved changes, and
-exports real source files with the right extension. Everything is stored locally, so it
-works completely offline.
-
-### Encrypted key vault
-
-Store API keys, tokens, connection strings and passwords in an encrypted vault. Secrets
-are never shown in plain text by default and are only decrypted in memory when the vault
-is unlocked.
-
-- **Transparent mode** — on first launch the vault is protected by a random key wrapped
-  with Windows DPAPI (bound to the current Windows user). No password to remember.
-- **Master password mode** — derive the key with PBKDF2-SHA256 and unlock every entry
-  with a single password. Changing the password re-encrypts the whole vault.
-- **Encrypted export/import** — move the vault between machines with a `.ditvault` file
-  protected by its own password.
-- **Encrypted attachments** — attach credential files, certificates or JSON keys to any
-  entry. They are encrypted with the same AES-GCM key, capped at 10 MB per file and
-  included in `.ditvault` backups.
-- **AWS credentials import** — read an IAM access-key CSV export or an `~/.aws/credentials`
-  (INI) file, create or update the matching entries, and keep the original file attached.
 
 ### Settings
 
@@ -229,7 +256,7 @@ DoItNow/
 │     ├─ ButtonStyle.xaml           # Buttons, combo boxes, inputs
 │     └─ CalendarStyles.xaml        # Custom WPF calendar template
 ├─ DoItNow.Tests/                   # xUnit suite: crypto, vault, profiles, AWS parser
-├─ docs/screenshots/                # Portfolio screenshots
+├─ docs/screenshots/                # Selected portfolio screenshots
 └─ DoItNow.sln
 ```
 
@@ -442,7 +469,9 @@ Adding a new theme means creating one dictionary with the same keys and register
 - [x] Multi-size app icon and window/taskbar integration
 - [ ] Drag-and-drop task scheduling on the timeline
 - [ ] Recurring tasks and reminders
-- [ ] CSV / Markdown export
+- [ ] Command palette (`Ctrl+K`) for navigation and quick capture
+- [ ] Import `.env` files into the encrypted vault
+- [ ] CSV / Markdown export of tasks and code notes
 - [ ] Optional cloud sync backend
 - [x] Build CI workflow
 - [x] Automated test suite (xUnit) with CI test runs

@@ -31,28 +31,28 @@ namespace DoItNow.Services
 
                 var task1 = new TaskItem
                 {
-                    Title = "Morning Run",
-                    Description = "Entrenamiento cardiovascular matutino al aire libre",
+                    Title = "Revisar PR de autenticación",
+                    Description = "Leer el diff, correr los tests y dejar comentarios accionables.",
                     Priority = Priority.High,
-                    Category = TaskCategory.Health,
+                    Category = TaskCategory.Work,
                     State = State.Active,
                     DueDate = today,
                     EstimatedMinutes = 30,
                     CreatedAt = DateTime.Now,
                     SubTasks = new List<SubTaskItem>
                     {
-                        new() { Title = "Calentamiento articular (5 min)", IsCompleted = true },
-                        new() { Title = "Carrera continúa 4km", IsCompleted = false },
-                        new() { Title = "Estiramiento y vuelta a la calma", IsCompleted = false }
+                        new() { Title = "Leer el diff completo", IsCompleted = true },
+                        new() { Title = "Correr la suite local", IsCompleted = false },
+                        new() { Title = "Dejar comentarios en el PR", IsCompleted = false }
                     }
                 };
 
                 var task2 = new TaskItem
                 {
-                    Title = "Yoga & Meditación",
-                    Description = "Sesión de flexibilidad, postura y respiración",
+                    Title = "Configurar entorno local",
+                    Description = "Clonar el repo, restaurar paquetes y validar la cadena de conexión.",
                     Priority = Priority.Medium,
-                    Category = TaskCategory.Health,
+                    Category = TaskCategory.Work,
                     State = State.Pending,
                     DueDate = today,
                     EstimatedMinutes = 25,

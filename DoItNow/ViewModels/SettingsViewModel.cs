@@ -310,23 +310,23 @@ namespace DoItNow.ViewModels
                 },
                 new()
                 {
-                    Title = "Sesión de enfoque profundo",
-                    Description = "Bloque sin notificaciones para avanzar en la arquitectura MVVM.",
+                    Title = "Bloque de foco: refactor del parser",
+                    Description = "Sin notificaciones: separar el parseo de credenciales de la UI.",
                     Priority = Priority.Medium,
-                    Category = TaskCategory.Personal,
+                    Category = TaskCategory.Work,
                     State = State.Pending,
                     DueDate = today,
                     EstimatedMinutes = 120
                 },
                 new()
                 {
-                    Title = "Entrenamiento de fuerza",
-                    Description = "Rutina de 30 minutos: movilidad, fuerza y estiramientos.",
+                    Title = "Rotar claves de AWS en el vault",
+                    Description = "Importar el CSV de IAM, actualizar las entradas y archivar el original.",
                     Priority = Priority.Medium,
-                    Category = TaskCategory.Health,
+                    Category = TaskCategory.Work,
                     State = State.Pending,
                     DueDate = today,
-                    EstimatedMinutes = 30
+                    EstimatedMinutes = 25
                 },
                 new()
                 {
@@ -366,10 +366,10 @@ namespace DoItNow.ViewModels
                 },
                 new()
                 {
-                    Title = "Meditación y estiramientos",
-                    Description = "20 minutos para bajar el ritmo y recuperar foco.",
+                    Title = "Revisar logs del pipeline de CI",
+                    Description = "Detectar el test intermitente y abrir un issue con la traza.",
                     Priority = Priority.Low,
-                    Category = TaskCategory.Health,
+                    Category = TaskCategory.Work,
                     State = State.Pending,
                     DueDate = today.AddDays(2),
                     EstimatedMinutes = 20
