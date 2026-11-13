@@ -147,6 +147,7 @@ without a restart.
 | AI | Ollama (local) + Groq Cloud (OpenAI-compatible API) |
 | Icons | FontAwesome.WPF / FontAwesome.Sharp |
 | Theming | Custom semantic resource dictionaries with runtime swap |
+| Testing | xUnit, Microsoft.NET.Test.Sdk (CI on Windows) |
 
 ---
 
@@ -200,6 +201,7 @@ DoItNow/
 │     ├─ Themes/HighContrastTheme.xaml  # Semantic palette: Alto contraste
 │     ├─ ButtonStyle.xaml           # Buttons, combo boxes, inputs
 │     └─ CalendarStyles.xaml        # Custom WPF calendar template
+├─ DoItNow.Tests/                   # xUnit suite: crypto, vault, attachments, AWS parser
 ├─ docs/screenshots/                # Portfolio screenshots
 └─ DoItNow.sln
 ```
@@ -230,6 +232,19 @@ Or open `DoItNow.sln` in Visual Studio 2022 and press **F5**.
 > Building the solution from the CLI is also supported, but add `-m:1`
 > (`dotnet build DoItNow.sln -m:1`) to avoid a known WPF temporary-assembly race on
 > cold builds.
+
+### Tests
+
+The suite covers cryptography, the encrypted vault (entries, attachments, master-password
+rotation and encrypted export/import) and the AWS credentials parser. Each test runs
+against a temporary SQLite database, so your real vault is never touched.
+
+```powershell
+dotnet test DoItNow.Tests/DoItNow.Tests.csproj
+```
+
+CI runs the same command on every push. Pushing a `v*` tag publishes a framework-dependent
+Windows build on the Releases page.
 
 ### Configuration
 
@@ -372,6 +387,8 @@ Adding a new theme means creating one dictionary with the same keys and register
 - [ ] CSV / Markdown export
 - [ ] Optional cloud sync backend
 - [x] Build CI workflow
+- [x] Automated test suite (xUnit) with CI test runs
+- [x] Tagged GitHub releases with a packaged Windows build
 
 ---
 

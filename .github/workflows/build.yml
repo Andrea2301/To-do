@@ -20,7 +20,10 @@ jobs:
           dotnet-version: "8.0.x"
 
       - name: Restore
-        run: dotnet restore DoItNow/DoItNow.csproj
+        run: dotnet restore DoItNow.sln
 
       - name: Build
-        run: dotnet build DoItNow/DoItNow.csproj --no-restore -c Release -m:1
+        run: dotnet build DoItNow.sln --no-restore -c Release -m:1
+
+      - name: Test
+        run: dotnet test DoItNow.Tests/DoItNow.Tests.csproj --no-build --no-restore -c Release -m:1 --logger "console;verbosity=normal"

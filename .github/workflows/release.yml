@@ -1,0 +1,53 @@
+name: release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Test
+        run: dotnet test DoItNow.Tests/DoItNow.Tests.csproj -c Release -m:1
+
+      - name: Publish
+        run: >
+          dotnet publish DoItNow/DoItNow.csproj
+          -c Release
+          -r win-x64
+          --self-contained false
+          -p:DebugType=None
+          -p:DebugSymbols=false
+          -o publish
+
+      - name: Package
+        shell: pwsh
+        run: Compress-Archive -Path publish/* -DestinationPath DoItNow-win-x64.zip
+
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: DoItNow-win-x64.zip
+          fail_on_unmatched_files: true
+          generate_release_notes: true
+          body: |
+            Framework-dependent build for Windows x64.
+
+            Requirements: [.NET 8 Desktop Runtime](https://dotnet.microsoft.com/download/dotnet/8.0).
+            Unzip and run `DoItNow.exe`. No installer, no administrator rights required.
+
+            Optional: copy `appsettings.example.json` to `appsettings.json` to preselect a theme
+            or an AI provider. The file is never overwritten by the app.
