@@ -15,7 +15,7 @@ namespace DoItNow.ViewModels
     /// Dashboard (calendario + agenda + timeline), Tareas, Notas, Bóveda,
     /// AI Chat (Ollama), Doc Tools y Configuración.
     /// </summary>
-    public partial class MainViewModel : ObservableObject
+    public partial class MainViewModel : ObservableObject, IDisposable
     {
         private readonly TaskService _taskService;
         private readonly SettingsService _settingsService;
@@ -45,6 +45,14 @@ namespace DoItNow.ViewModels
         public ObservableCollection<WeekDayItem> WeekDays { get; } = new();
 
         public IReadOnlyList<ThemeInfo> AvailableThemes => ThemeService.Themes;
+
+        /// <summary>Perfil activo, mostrado en el avatar del header.</summary>
+        public string ProfileName => AppSession.CurrentProfile?.DisplayName ?? "Invitado";
+
+        public string ProfileInitial => AppSession.CurrentProfile?.Initial ?? "?";
+
+        public string ProfileAccessLabel =>
+            AppSession.CurrentProfile?.AccessLabel ?? "Sin sesión";
 
         private readonly DispatcherTimer _clockTimer;
         private bool _syncingTheme;
@@ -408,5 +416,19 @@ namespace DoItNow.ViewModels
             CurrentSectionTitle = "⚙️  Configuración";
             _ = Settings.LoadSettingsAsync();
         }
+
+        #region Ciclo de vida
+
+        /// <summary>
+        /// Detiene el reloj y libera la suscripción al tema al cerrar la sesión.
+        /// Evita que el ViewModel del perfil anterior siga vivo tras el logout.
+        /// </summary>
+        public void Dispose()
+        {
+            _clockTimer.Stop();
+            ThemeService.ThemeChanged -= OnThemeServiceChanged;
+        }
+
+        #endregion
     }
 }

@@ -3,8 +3,8 @@
 **A calm, AI-assisted productivity desktop app built with WPF and .NET 8.**
 
 DoItNow brings tasks, calendar, daily planning, a hybrid AI assistant, an encrypted key
-vault and a real code editor into a single focused workspace. It ships with a
-hand-crafted design system, nine selectable themes, meaningful animations,
+vault and a real code editor into a single focused workspace. It ships with local
+profiles, a hand-crafted design system, nine selectable themes, meaningful animations,
 and a local-first data model.
 
 <p>
@@ -32,6 +32,10 @@ screenshots.
 
 ## Highlights
 
+- **Local profiles with optional password** — a sign-in screen keeps separate workspaces
+  on the same machine. Each profile owns its database, settings, chat history and vault;
+  the password is stored only as a PBKDF2-SHA256 verifier. The first profile adopts any
+  database created by older versions, with no manual migration.
 - **Nine selectable themes** — Claro, Oscuro, Sepia, Medianoche, Océano, Nord, Rosé,
   Cinnamoroll and Alto contraste. Semantic brush tokens are swapped at runtime and persisted across
   sessions, with startup CLI override support.
@@ -57,15 +61,35 @@ screenshots.
   `.ditvault` file and import it on another machine. No cloud account required.
 - **Micro-interactions** — section transitions, hover-lift cards, animated toasts,
   a window entrance animation and a theme-aware startup veil that never delays loading.
+- **Desktop details** — a multi-size app icon for the executable, window and taskbar;
+  borderless chrome with custom window controls; window bounds restored on launch.
 - **Session restore** — reopens the last visited module (including the AI Chat/Documents
   sub-mode) and restores the window size, position and maximized state on launch.
-- **Local-first** — all data lives in a local SQLite database; no account required.
+- **Local-first** — all data lives in a local SQLite database; no cloud account required.
 - **Portfolio-ready demo mode** — one flag loads curated tasks and a sample AI
   conversation, so screenshots are always reproducible.
 
 ---
 
 ## Feature tour
+
+### Profiles and sign-in
+
+DoItNow opens on a local profile screen. Profiles are not cloud accounts: they are
+workspaces stored on this machine, designed for shared computers and for keeping contexts
+separate (personal, work, demos).
+
+- Each profile has its own SQLite database, theme, settings, chat history and vault.
+  Deleting a profile deletes its folder, including the encrypted vault key.
+- Password protection is optional. When set, the app derives a PBKDF2-SHA256 verifier
+  (210,000 iterations, per-profile salt) and never stores the password itself.
+- The password locks the app UI. It does **not** encrypt the whole database (tasks, notes
+  and chat remain readable on disk). Vault entries and attachments are separately
+  encrypted, as described below.
+- Creating the first profile moves a pre-existing `%LOCALAPPDATA%\DoItNow\doitnow.db`
+  into that profile's folder, so an upgrade never loses data.
+- The rail's sign-out button returns to the profile screen; the profile's window bounds
+  and last section are saved before the session is closed.
 
 ### Command center
 
@@ -144,6 +168,7 @@ without a restart.
 | Persistence | SQLite + EF Core 9 |
 | Editor | AvalonEdit (syntax highlighting, line numbers) |
 | Security | AES-256-GCM + PBKDF2-SHA256, Windows DPAPI |
+| Identity | Local profiles with optional PBKDF2 password verifier |
 | AI | Ollama (local) + Groq Cloud (OpenAI-compatible API) |
 | Icons | FontAwesome.WPF / FontAwesome.Sharp |
 | Theming | Custom semantic resource dictionaries with runtime swap |
@@ -171,7 +196,8 @@ The app follows a classic MVVM split:
 - **Views** (`MainWindow.xaml`, `Views/*.xaml`) contain layout and animation only.
 - **ViewModels** orchestrate navigation, filtering, commands and state.
 - **Services** own persistence (`TaskService`, `SettingsService`, `NoteService`),
-  AI (`OllamaService`, `ChatService`), security (`CryptoService`, `VaultService`) and
+  AI (`OllamaService`, `ChatService`), security (`CryptoService`, `VaultService`),
+  profiles (`ProfileService`, `AppSession`) and
   cross-cutting concerns (`ThemeService`, `ToastService`, `SyntaxHighlightingService`).
 - **Models** are plain data objects; EF Core maps them in `Data/AppDbContext.cs`.
 
@@ -180,15 +206,16 @@ The app follows a classic MVVM split:
 ```text
 DoItNow/
 ├─ DoItNow/
-│  ├─ App.xaml / App.xaml.cs        # Startup, theme bootstrap, global error handling
+│  ├─ App.xaml / App.xaml.cs        # Startup, session/login orchestration, error handling
 │  ├─ MainWindow.xaml(.cs)          # Shell, navigation, toasts, window chrome
-│  ├─ Views/                        # Tasks, Notes, Vault, AI workspace, Settings
+│  ├─ Views/                        # Login, Tasks, Notes, Vault, AI workspace, Settings
 │  ├─ ViewModels/                   # Main + per-module view models
-│  ├─ Models/                       # Task, SubTask, Chat, Settings, VaultEntry, VaultAttachment, CodeNote
-│  ├─ Services/                     # Task, Notes, Vault, Crypto, AWS importer, AI, Theme, Dialog, Toast
+│  ├─ Models/                       # Task, SubTask, Chat, Settings, VaultEntry, VaultAttachment, CodeNote, AppProfile
+│  ├─ Services/                     # Task, Notes, Vault, Crypto, AWS importer, Profiles, AI, Theme, Dialog, Toast
 │  ├─ Controls/                     # CodeEditor (AvalonEdit host with theme-aware colors)
 │  ├─ Converters/                   # Theme-aware value converters
 │  ├─ Data/                         # EF Core DbContext + initialization
+│  ├─ Assets/DoItNow.ico            # Multi-size app icon (exe, window, taskbar)
 │  └─ Styles/
 │     ├─ Themes/LightTheme.xaml     # Semantic palette: Claro
 │     ├─ Themes/DarkTheme.xaml      # Semantic palette: Oscuro
@@ -201,7 +228,7 @@ DoItNow/
 │     ├─ Themes/HighContrastTheme.xaml  # Semantic palette: Alto contraste
 │     ├─ ButtonStyle.xaml           # Buttons, combo boxes, inputs
 │     └─ CalendarStyles.xaml        # Custom WPF calendar template
-├─ DoItNow.Tests/                   # xUnit suite: crypto, vault, attachments, AWS parser
+├─ DoItNow.Tests/                   # xUnit suite: crypto, vault, profiles, AWS parser
 ├─ docs/screenshots/                # Portfolio screenshots
 └─ DoItNow.sln
 ```
@@ -233,11 +260,26 @@ Or open `DoItNow.sln` in Visual Studio 2022 and press **F5**.
 > (`dotnet build DoItNow.sln -m:1`) to avoid a known WPF temporary-assembly race on
 > cold builds.
 
+### First run
+
+1. The app opens on the profile screen. Create a profile (name and, optionally, a
+   password of at least 8 characters) and press **Crear y entrar**.
+2. Every profile stores its data in its own folder; the vault starts in transparent DPAPI
+   mode until you set a vault master password.
+3. To switch workspaces, use the sign-out button at the bottom of the left rail. The
+   profile screen also lets you change or remove a profile password and delete a profile
+   with its data.
+
+If you are upgrading from a version without profiles, the existing
+`%LOCALAPPDATA%\DoItNow\doitnow.db` is moved into the first profile you create.
+
 ### Tests
 
 The suite covers cryptography, the encrypted vault (entries, attachments, master-password
-rotation and encrypted export/import) and the AWS credentials parser. Each test runs
-against a temporary SQLite database, so your real vault is never touched.
+rotation and encrypted export/import), the AWS credentials parser, and the local profile
+registry (creation, password verification and rotation, deletion, legacy database
+migration and registry recovery). Each test runs against a temporary SQLite database and a
+temporary profile root, so your real data is never touched.
 
 ```powershell
 dotnet test DoItNow.Tests/DoItNow.Tests.csproj
@@ -298,28 +340,42 @@ Notes:
   so backups remain safe when moved through cloud storage or email. Format v2 adds
   attachments; v1 files still import.
 
+### Profile password (app lock)
+
+The profile password is a local access barrier, not disk encryption. The app verifies it
+with PBKDF2-SHA256 and refuses to open the workspace without it, but tasks, notes and chat
+messages remain in a plain SQLite database. The vault is the encrypted store: keep secrets
+there. For full at-rest protection, enable BitLocker or an equivalent OS-level solution.
+
 ### Database
 
-Tasks, conversations, code notes and encrypted vault entries (including their files) are stored at:
+Each local profile keeps its own SQLite database:
 
 ```text
-%LOCALAPPDATA%\DoItNow\doitnow.db
+%LOCALAPPDATA%\DoItNow\profiles\<profile-id>\doitnow.db
 ```
 
-Delete that file to reset the app to a clean state. Vault secrets remain encrypted at
-rest; deleting the database also deletes the wrapped vault key, so exported backups are
-the only way to recover entries afterwards.
+The profile registry (`%LOCALAPPDATA%\DoItNow\profiles.json`) stores only display names,
+ids and PBKDF2 password verifiers. Tasks, conversations, code notes and encrypted vault
+entries (including their files) stay inside the profile's database.
+
+Delete a profile from the sign-in screen to remove its folder; deleting the database also
+deletes the wrapped vault key, so exported backups are the only way to recover entries
+afterwards. If `profiles.json` is corrupted, the app rebuilds the list from the profile
+folders so the data is not orphaned.
 
 ---
 
 ## Demo mode (CLI)
 
-Useful for screenshots, demos and quick reviews:
+Useful for screenshots, demos and quick reviews. The app still opens the profile screen
+unless `--profile` can sign in automatically; the other flags apply once a profile is open.
 
 | Flag | Description |
 | --- | --- |
+| `--profile=<name>` | Signs in directly when that profile exists and has no password (ideal for demos). |
 | `--demo` | Loads curated tasks and a sample AI conversation (idempotent). |
-| `--theme=<id>` | Overrides the saved theme at startup (`light`, `dark`, `sepia`, `midnight`, `ocean`, `nord`, `rose`, `cinnamoroll`, `contrast`). |
+| `--theme=<id>` | Overrides the profile theme at startup (`light`, `dark`, `sepia`, `midnight`, `ocean`, `nord`, `rose`, `cinnamoroll`, `contrast`). |
 | `--section=dashboard` | Opens the dashboard (calendar, agenda and plan board). |
 | `--section=tasks` | Opens task management. |
 | `--section=calendar` | Alias of `dashboard`; the calendar lives there. |
@@ -332,7 +388,7 @@ Useful for screenshots, demos and quick reviews:
 Example:
 
 ```powershell
-dotnet run --project DoItNow/DoItNow.csproj -- --demo --theme=dark --section=dashboard
+dotnet run --project DoItNow/DoItNow.csproj -- --profile=Demo --demo --theme=dark --section=dashboard
 ```
 
 ---
@@ -382,6 +438,8 @@ Adding a new theme means creating one dictionary with the same keys and register
 - [x] Code notes with syntax highlighting (AvalonEdit)
 - [x] Encrypted vault export/import
 - [x] Encrypted vault attachments and AWS credentials import
+- [x] Local profiles with optional password and per-profile databases
+- [x] Multi-size app icon and window/taskbar integration
 - [ ] Drag-and-drop task scheduling on the timeline
 - [ ] Recurring tasks and reminders
 - [ ] CSV / Markdown export

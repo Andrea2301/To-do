@@ -167,7 +167,17 @@ namespace DoItNow
             return true;
         }
 
-        private void MainWindow_Closing(object? sender, CancelEventArgs e) => SavePlacement();
+        private void MainWindow_Closing(object? sender, CancelEventArgs e)
+        {
+            SavePlacement();
+
+            // Libera el reloj y la suscripción al tema del perfil que se cierra.
+            if (DataContext is MainViewModel viewModel)
+            {
+                viewModel.Dispose();
+                DataContext = null;
+            }
+        }
 
         /// <summary>
         /// Guarda la geometría normal (la de RestoreBounds si está maximizada)
@@ -510,6 +520,25 @@ namespace DoItNow
 
         private void CloseButton_Click(object sender, RoutedEventArgs e)
             => Application.Current.Shutdown();
+
+        /// <summary>
+        /// Cierra la sesión del perfil activo y vuelve a la pantalla de perfiles.
+        /// Los datos quedan guardados en la base del perfil.
+        /// </summary>
+        private void LogoutButton_Click(object sender, RoutedEventArgs e)
+        {
+            var name = AppSession.CurrentProfile?.DisplayName ?? "tu perfil";
+
+            var confirmed = DialogService.Confirm(
+                "Cerrar sesión",
+                $"¿Cerrar la sesión de «{name}»?\n\n" +
+                "Tus datos se guardan y podrás volver a entrar desde la pantalla de perfiles.");
+
+            if (!confirmed) return;
+
+            if (Application.Current is App app)
+                app.SignOut();
+        }
 
         private void MinimizeButton_Click(object sender, RoutedEventArgs e)
             => WindowState = WindowState.Minimized;

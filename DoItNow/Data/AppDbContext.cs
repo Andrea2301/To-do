@@ -1,4 +1,5 @@
 using DoItNow.Models;
+using DoItNow.Services;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.IO;
@@ -27,6 +28,15 @@ namespace DoItNow.Data
                     var fullPath = Path.GetFullPath(overridePath);
                     Directory.CreateDirectory(Path.GetDirectoryName(fullPath)!);
                     return fullPath;
+                }
+
+                // Cada perfil local abre su propia base (ver ProfileService/AppSession).
+                var profilePath = AppSession.DatabasePath;
+                if (!string.IsNullOrWhiteSpace(profilePath))
+                {
+                    var fullProfilePath = Path.GetFullPath(profilePath);
+                    Directory.CreateDirectory(Path.GetDirectoryName(fullProfilePath)!);
+                    return fullProfilePath;
                 }
 
                 var folder = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
