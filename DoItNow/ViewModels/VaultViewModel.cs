@@ -856,8 +856,28 @@ namespace DoItNow.ViewModels
             return string.Join(Environment.NewLine, lines);
         }
 
-        // --- Importación de variables .env ---
+        // --- Respaldo en Google Drive ---
 
+        [RelayCommand]
+        public async Task OpenDriveBackupAsync()
+        {
+            if (!IsUnlocked) return;
+
+            try
+            {
+                if (DialogService.ShowDriveBackup(_vaultService))
+                {
+                    await LoadEntriesAsync();
+                    StatusMessage = "✓ Bóveda actualizada desde Google Drive.";
+                }
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"❌ No se pudo abrir Google Drive: {ex.Message}";
+            }
+        }
+
+        // --- Importación de variables .env ---
         [RelayCommand]
         public async Task ImportEnvFileAsync()
         {
